@@ -20,7 +20,7 @@ export const LandingFeatures: React.FC = () => {
       </div>
 
       {/* Bento Grid */}
-      <div id="architecture" className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Card 1: BullMQ Queue Engine (Col 7) */}
         <GlowBorderCard className="md:col-span-7 flex flex-col justify-between">
           <div>

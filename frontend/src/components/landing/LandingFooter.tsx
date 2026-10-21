@@ -16,14 +16,14 @@ export const LandingFooter: React.FC = () => {
       { label: 'Slack Alerts', href: '#features' },
     ],
     Architecture: [
-      { label: 'Queue Engine', href: '#architecture' },
+      { label: 'Pipeline Orchestration', href: '#architecture' },
       { label: 'Redis Rate Limiter', href: '#architecture' },
-      { label: 'Elasticsearch Search', href: '#architecture' },
-      { label: 'Supabase Ledger', href: '#architecture' },
+      { label: 'BullMQ Worker Engine', href: '#queue' },
+      { label: 'Tech Stack Specifications', href: '#stack' },
     ],
     Resources: [
       { label: 'GitHub Repository', href: 'https://github.com/Bharath-S18/ReachInBox', external: true },
-      { label: 'Bull-Board Admin', href: 'http://localhost:5000/admin/queues', external: true },
+      { label: 'Queue Operations', href: '#queue' },
       { label: 'Health Status', href: 'http://localhost:5000/health', external: true },
     ],
   };

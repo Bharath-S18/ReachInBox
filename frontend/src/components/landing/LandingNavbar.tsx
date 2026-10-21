@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Mail, Zap } from 'lucide-react';
+import { Github, Mail, Star, Zap } from 'lucide-react';
 import { User } from '../../types';
 
 interface LandingNavbarProps {
@@ -55,8 +55,9 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
           >
             <Github className="h-3.5 w-3.5" />
             <span>GitHub</span>
-            <span className="rounded border border-border-card bg-code-badge-bg px-1.5 py-0.2 text-[10px] text-border-highlight">
-              ★ Star
+            <span className="flex items-center gap-1 rounded border border-border-card bg-code-badge-bg px-1.5 py-0.2 text-[10px] text-border-highlight">
+              <Star className="h-2.5 w-2.5 fill-border-highlight text-border-highlight" />
+              <span>Star</span>
             </span>
           </a>
 
