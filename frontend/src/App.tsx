@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthModal } from './components/AuthModal';
 import { ComposeModal } from './components/ComposeModal';
+import { QueueTelemetryView } from './components/dashboard/QueueTelemetryView';
 import { EmailTable } from './components/EmailTable';
 import { Header } from './components/Header';
-import { LoginScreen } from './components/LoginScreen';
+import { LandingFeatures } from './components/landing/LandingFeatures';
+import { LandingFooter } from './components/landing/LandingFooter';
+import { LandingHero } from './components/landing/LandingHero';
+import { LandingNavbar } from './components/landing/LandingNavbar';
+import { LandingTechStrip } from './components/landing/LandingTechStrip';
 import { SendersModal } from './components/SendersModal';
 import { SlackModal } from './components/SlackModal';
 import { StatsCards } from './components/StatsCards';
@@ -26,6 +32,11 @@ const GOOGLE_CLIENT_ID =
 export function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // App view: 'landing' or 'dashboard'
+  const [appMode, setAppMode] = useState<'landing' | 'dashboard'>('landing');
+  const [currentDashboardView, setCurrentDashboardView] = useState<'campaigns' | 'queue'>('campaigns');
 
   const [stats, setStats] = useState<EmailStats | null>(null);
   const [senders, setSenders] = useState<SenderAccount[]>([]);
@@ -63,6 +74,7 @@ export function AppContent() {
       .getMe()
       .then((data) => {
         setUser(data.user);
+        setAppMode('dashboard');
       })
       .catch(() => {
         localStorage.removeItem('reachinbox_token');
@@ -73,7 +85,7 @@ export function AppContent() {
       });
   }, []);
 
-  // Fetch dashboard telemetry
+  // Fetch dashboard data
   const loadDashboardData = async (silent = false) => {
     if (!user) return;
     if (!silent) setLoading(true);
@@ -108,21 +120,21 @@ export function AppContent() {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && appMode === 'dashboard') {
       loadDashboardData();
     }
-  }, [user, activeTab, page]);
+  }, [user, appMode, activeTab, page]);
 
-  // Periodic polling every 15 seconds to update worker queue progress
+  // Periodic polling every 15 seconds to sync BullMQ progress
   useEffect(() => {
-    if (!user) return;
+    if (!user || appMode !== 'dashboard') return;
     const interval = setInterval(() => {
       loadDashboardData(true);
     }, 15000);
     return () => clearInterval(interval);
-  }, [user, activeTab, page]);
+  }, [user, appMode, activeTab, page]);
 
-  // Handle Debounced Full-Text Search
+  // Debounced Search
   const handleSearchChange = (q: string) => {
     setSearchQuery(q);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -150,10 +162,14 @@ export function AppContent() {
     setSearchSource(null);
   };
 
-  // Keyboard shortcut listener (/ to focus search)
+  // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
         e.preventDefault();
         const searchInput = document.getElementById('search-input');
         if (searchInput) searchInput.focus();
@@ -163,7 +179,6 @@ export function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Handle Schedule Submit
   const handleScheduleSubmit = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
@@ -177,7 +192,6 @@ export function AppContent() {
     }
   };
 
-  // Handle Cancel Job
   const handleCancelJob = async (id: string) => {
     if (!confirm('Cancel this scheduled email dispatch?')) return;
     try {
@@ -191,6 +205,7 @@ export function AppContent() {
   const handleLogout = () => {
     localStorage.removeItem('reachinbox_token');
     setUser(null);
+    setAppMode('landing');
   };
 
   if (authLoading) {
@@ -198,88 +213,135 @@ export function AppContent() {
       <div className="flex min-h-screen items-center justify-center bg-surface-canvas font-mono text-xs text-border-highlight">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-border-highlight animate-ping" />
-          <span>INITIALIZING REACHINBOX PRO...</span>
+          <span>INITIALIZING REACHINBOX...</span>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return (
-      <LoginScreen
+  return (
+    <div className="min-h-screen bg-surface-canvas text-on-surface antialiased bg-grid-tech selection:bg-white selection:text-black flex flex-col">
+      {appMode === 'dashboard' && user ? (
+        <>
+          {/* Dashboard Header */}
+          <Header
+            user={user}
+            currentView={currentDashboardView}
+            onViewChange={(v) => setCurrentDashboardView(v)}
+            slackStatus={slackStatus}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            onOpenCompose={() => setIsComposeOpen(true)}
+            onOpenSlackModal={() => setIsSlackModalOpen(true)}
+            onOpenSendersModal={() => setIsSendersModalOpen(true)}
+            onRefresh={() => loadDashboardData()}
+            onLogout={handleLogout}
+            isRefreshing={isRefreshing}
+          />
+
+          {/* Main Dashboard Workspace */}
+          <main className="flex-grow mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 w-full">
+            {/* View Switcher Controls & Breadcrumb */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 font-mono text-xs text-border-highlight uppercase tracking-wider mb-1">
+                  <span>ReachInbox Operations</span>
+                  <span className="text-text-muted">•</span>
+                  <button
+                    onClick={() => setAppMode('landing')}
+                    className="text-text-muted hover:text-white underline cursor-pointer"
+                  >
+                    View Website Overview
+                  </button>
+                </div>
+                <h2 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                  {currentDashboardView === 'campaigns'
+                    ? 'Outreach Campaigns'
+                    : 'BullMQ Queue Engine'}
+                </h2>
+              </div>
+
+              {currentDashboardView === 'campaigns' && (
+                <button
+                  onClick={() => setIsComposeOpen(true)}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 font-display text-xs font-semibold text-black shadow-glow-white transition-all hover:bg-slate-200 active:scale-95 sm:self-auto self-start"
+                >
+                  <span>+ Schedule Campaign</span>
+                </button>
+              )}
+            </div>
+
+            {/* Render Active View */}
+            {currentDashboardView === 'campaigns' ? (
+              <>
+                <StatsCards stats={stats} loading={loading} />
+                <EmailTable
+                  activeTab={activeTab}
+                  onTabChange={(tab) => {
+                    setActiveTab(tab);
+                    setPage(1);
+                  }}
+                  scheduledJobs={scheduledJobs}
+                  sentJobs={sentJobs}
+                  searchResults={searchResults}
+                  searchQuery={searchQuery}
+                  onClearSearch={handleClearSearch}
+                  searchSource={searchSource}
+                  loading={loading}
+                  onCancelJob={handleCancelJob}
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={(p) => setPage(p)}
+                />
+              </>
+            ) : (
+              <QueueTelemetryView
+                stats={stats}
+                scheduledJobs={scheduledJobs}
+                sentJobs={sentJobs}
+                loading={loading}
+                onRefresh={() => loadDashboardData()}
+              />
+            )}
+          </main>
+        </>
+      ) : (
+        <>
+          {/* Public Landing Page */}
+          <LandingNavbar
+            user={user}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onOpenDashboard={() => setAppMode('dashboard')}
+          />
+
+          <main className="flex-grow w-full">
+            <LandingHero
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              onOpenDashboard={() => setAppMode('dashboard')}
+              isLoggedIn={!!user}
+            />
+
+            <LandingTechStrip />
+
+            <LandingFeatures />
+          </main>
+        </>
+      )}
+
+      {/* Global Footer */}
+      <LandingFooter />
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={(loggedUser) => {
           setUser(loggedUser);
+          setAppMode('dashboard');
         }}
       />
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-surface-canvas text-on-surface antialiased bg-grid-tech selection:bg-white selection:text-black">
-      {/* Ambient Top Light Halo */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-b from-sky-400/10 via-purple-500/5 to-transparent blur-3xl -z-10" />
-
-      {/* Header */}
-      <Header
-        user={user}
-        slackStatus={slackStatus}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        onOpenCompose={() => setIsComposeOpen(true)}
-        onOpenSlackModal={() => setIsSlackModalOpen(true)}
-        onOpenSendersModal={() => setIsSendersModalOpen(true)}
-        onRefresh={() => loadDashboardData()}
-        onLogout={handleLogout}
-        isRefreshing={isRefreshing}
-      />
-
-      {/* Main Dashboard Canvas */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        {/* Workspace Title & Stats Row */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-mono text-xs text-border-highlight uppercase tracking-wider">
-            <span>Workspace Overview</span>
-            <span className="text-text-muted">•</span>
-            <span className="text-text-muted">BullMQ Cluster Active</span>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Email Outreach Operations
-            </h2>
-            <button
-              onClick={() => setIsComposeOpen(true)}
-              className="flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 font-display text-xs font-semibold text-black shadow-glow-white transition-all hover:bg-slate-200 active:scale-95 sm:self-auto self-start"
-            >
-              <span>+ New Outreach Campaign</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 4 Vengeance UI Stat Cards */}
-        <StatsCards stats={stats} loading={loading} />
-
-        {/* Email Jobs Telemetry Table */}
-        <EmailTable
-          activeTab={activeTab}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setPage(1);
-          }}
-          scheduledJobs={scheduledJobs}
-          sentJobs={sentJobs}
-          searchResults={searchResults}
-          searchQuery={searchQuery}
-          onClearSearch={handleClearSearch}
-          searchSource={searchSource}
-          loading={loading}
-          onCancelJob={handleCancelJob}
-          page={page}
-          totalPages={totalPages}
-          onPageChange={(p) => setPage(p)}
-        />
-      </main>
-
-      {/* Modals */}
+      {/* Campaign Compose Modal */}
       <ComposeModal
         isOpen={isComposeOpen}
         onClose={() => setIsComposeOpen(false)}
@@ -288,6 +350,7 @@ export function AppContent() {
         isSubmitting={isSubmitting}
       />
 
+      {/* Slack Live Alert Modal */}
       <SlackModal
         isOpen={isSlackModalOpen}
         onClose={() => setIsSlackModalOpen(false)}
@@ -295,6 +358,7 @@ export function AppContent() {
         onStatusUpdated={() => loadDashboardData(true)}
       />
 
+      {/* Outbound Senders Modal */}
       <SendersModal
         isOpen={isSendersModalOpen}
         onClose={() => setIsSendersModalOpen(false)}

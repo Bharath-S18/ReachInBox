@@ -600,64 +600,52 @@ Authoring a dedicated end-to-end integration test suite verifying every endpoint
 
 ---
 
-## Phase 8: Frontend Dashboard (Vengeance UI Inspired Design System)
+## Phase 8: Frontend Dashboard (Vengeance UI Landing Page & Outreach Engine)
 **Status: COMPLETED**
 
 ### 1. What Was Done
-- **Design Tokens & Theme Configuration (8.1)**:
-  - Modeled the visual language directly after the **Vengeance UI** design system (`https://www.vengenceui.com/` and Stitch project `projects/11229934179459081335`).
-  - Configured deep dark mode tokens in [tailwind.config.js](file:///e:/ReachInBox/frontend/tailwind.config.js):
-    - `surface-canvas`: `#020408`
-    - `surface-card`: `#090d16`
-    - `surface-container`: `#131315`
-    - `surface-dock`: `rgba(9, 13, 22, 0.85)`
-    - `border-card`: `#27272a`
-    - `border-highlight`: `#38bdf8`
-    - `text-muted`: `#94a3b8`
-    - Cyan & white ambient glow shadows (`shadow-glow-cyan`, `shadow-glow-white`).
-  - Imported Google Fonts in [index.html](file:///e:/ReachInBox/frontend/index.html):
-    - `Space Grotesk` (weights 500, 600, 700) for high-impact headlines and branding.
-    - `Inter` (weights 300, 400, 500, 600, 700) for clean body copy and data tables.
-    - `JetBrains Mono` (weights 400, 500, 600) for status badges, hotkeys, and telemetry tags.
-  - Implemented dot-grid background utility (`.bg-grid-tech`) and custom dark scrollbars in [index.css](file:///e:/ReachInBox/frontend/src/index.css).
-- **Authentication & Instant Evaluator Access (8.2)**:
-  - Created [LoginScreen.tsx](file:///e:/ReachInBox/frontend/src/components/LoginScreen.tsx) with `@react-oauth/google` GoogleLogin component.
-  - Added a dedicated 1-click **"Enter as Demo Lead Architect"** action invoking `POST /api/auth/demo` so any reviewer can immediately test the dashboard without setting up Google Cloud OAuth credentials.
-  - Persistent JWT session storage in `localStorage` with automatic token attachment via Axios request interceptors in [api.ts](file:///e:/ReachInBox/frontend/src/services/api.ts).
-- **Glass Dock Header & Profile Controls (8.3, 8.10)**:
-  - Implemented [Header.tsx](file:///e:/ReachInBox/frontend/src/components/Header.tsx) with sticky glassmorphism (`backdrop-blur-md`).
-  - Integrated spotlight search input with `/` keyboard shortcut.
-  - Embedded real-time Slack connection status pill showing active channel `#alerts`.
-  - Added Bull-Board quick link opening `/admin/queues` with live indicator.
-  - User profile chip with initials/avatar, email display, and clean Logout action.
-- **Vengeance UI Metric Cards (8.7)**:
-  - Implemented [StatsCards.tsx](file:///e:/ReachInBox/frontend/src/components/StatsCards.tsx) rendering 4 metric counters:
-    - `SCHEDULED QUEUE`: Active BullMQ delayed jobs.
-    - `DELIVERED OUTREACH`: Successfully dispatched emails.
-    - `RATE LIMIT DEFERRED`: Jobs deferred to the next hourly window.
-    - `FAILED DISPATCHES`: Exhausted attempts.
-- **Segmented Email Telemetry Table (8.4, 8.6, 8.7, 8.8)**:
-  - Implemented [EmailTable.tsx](file:///e:/ReachInBox/frontend/src/components/EmailTable.tsx) with segmented tab switcher:
-    - **Scheduled Queue**: Displays upcoming jobs with recipient, subject, scheduled send time, sender account, and live cancel action.
-    - **Delivered Outreach**: Displays sent jobs with dispatch timestamp, sender account, status badge, and clickable **"Ethereal Preview"** button opening the message preview URL.
-  - Real-time debounced full-text search querying `GET /api/emails/search?q=...` across Elasticsearch and PostgreSQL.
-- **Campaign Scheduling & CSV Lead Dropzone (8.5)**:
-  - Implemented [ComposeModal.tsx](file:///e:/ReachInBox/frontend/src/components/ComposeModal.tsx) with drag-and-drop CSV lead dropzone.
-  - Real-time client-side CSV parsing with valid lead count indicator and preview chips.
-  - Multi-sender account selector displaying hourly rate limits.
-  - Dynamic rate-limit safety warning banner when batch leads exceed sender limits.
-  - Start time datetime-local picker.
-- **Slack Live Alerting & Senders Modals (8.9)**:
-  - Created [SlackModal.tsx](file:///e:/ReachInBox/frontend/src/components/SlackModal.tsx) with OAuth flow trigger, channel status inspection, and test notification dispatch via `POST /api/slack/test-alert`.
-  - Created [SendersModal.tsx](file:///e:/ReachInBox/frontend/src/components/SendersModal.tsx) for managing SMTP transporters.
+- **Design Tokens & Vengeance UI Adoption (8.1)**:
+  - Modeled the frontend after the official **Vengeance UI** repository (`https://github.com/Ashutoshx7/VengeanceUI.git`) and Stitch project `projects/11229934179459081335`.
+  - Installed `framer-motion` for fluid component transitions.
+  - Authored dedicated Vengeance UI primitive components:
+    - [BorderBeam.tsx](file:///e:/ReachInBox/frontend/src/components/ui/BorderBeam.tsx): Moving luminous border ray around interactive cards.
+    - [GlowBorderCard.tsx](file:///e:/ReachInBox/frontend/src/components/ui/GlowBorderCard.tsx): Sleek dark glass card with ambient hover flare.
+  - Applied pure "ReachInbox" corporate branding without redundant tags.
+- **Dedicated Public Landing Page (8.2)**:
+  - Authored [LandingNavbar.tsx](file:///e:/ReachInBox/frontend/src/components/landing/LandingNavbar.tsx) with spotlight navigation anchors, GitHub star link, and Launch App action.
+  - Authored [LandingHero.tsx](file:///e:/ReachInBox/frontend/src/components/landing/LandingHero.tsx) featuring a high-impact headline, typography, and an **interactive live queue simulator** that demonstrates real-time BullMQ delayed job processing, rate boundary enforcement, and Ethereal preview URLs.
+  - Authored [LandingTechStrip.tsx](file:///e:/ReachInBox/frontend/src/components/landing/LandingTechStrip.tsx) highlighting BullMQ, Redis, PostgreSQL, Elasticsearch v8, Slack OAuth, and Ethereal SMTP.
+  - Authored [LandingFeatures.tsx](file:///e:/ReachInBox/frontend/src/components/landing/LandingFeatures.tsx) displaying a high-contrast bento grid.
+  - Authored [LandingFooter.tsx](file:///e:/ReachInBox/frontend/src/components/landing/LandingFooter.tsx) with multi-column links, status links, and copyright.
+- **Executive Auth Modal (8.3)**:
+  - Created [AuthModal.tsx](file:///e:/ReachInBox/frontend/src/components/AuthModal.tsx) replacing basic login screens with an executive glassmorphic dialog.
+  - Integrates authentic `@react-oauth/google` Google Sign-In alongside a 1-click **"Enter as Demo Lead Architect"** evaluator action for grading.
+- **Uncluttered App Header (8.4)**:
+  - Implemented [Header.tsx](file:///e:/ReachInBox/frontend/src/components/Header.tsx) with clean top-level view switchers (`Campaigns` vs `Queue Telemetry`), spotlight search input with `/` shortcut, Senders manager, Slack status pill (`#alerts`), and user logout.
+- **Integrated In-App BullMQ Queue Dashboard (8.5)**:
+  - Addressed raw external Bull-Board redirect limitation by creating [QueueTelemetryView.tsx](file:///e:/ReachInBox/frontend/src/components/dashboard/QueueTelemetryView.tsx) directly within the ReachInbox interface.
+  - Displays real-time cluster health, active worker threads (5 concurrent), inter-email throttle delay (2,000ms), delayed Redis counts, and a live job stream inspector, with quick link to `/admin/queues`.
+- **Campaigns Workspace & Lead Dropzone (8.6, 8.7, 8.8, 8.9, 8.10)**:
+  - [EmailTable.tsx](file:///e:/ReachInBox/frontend/src/components/EmailTable.tsx) with segmented Scheduled Queue and Delivered Outreach tables.
+  - [ComposeModal.tsx](file:///e:/ReachInBox/frontend/src/components/ComposeModal.tsx) with drag-and-drop CSV parser, lead validation preview, and rate limit safety notice.
+  - [SlackModal.tsx](file:///e:/ReachInBox/frontend/src/components/SlackModal.tsx) and [SendersModal.tsx](file:///e:/ReachInBox/frontend/src/components/SendersModal.tsx).
 
 ---
 
 ### 2. How Testing Was Conducted
 - **TypeScript & Vite Build**:
-  - Ran `npm run build` in `frontend/` verifying 0 compilation errors across 1652 modules:
+  - Ran `npm run build` in `frontend/` verifying 0 compilation errors across 1662 modules:
   ```text
-  dist/index.html                   1.30 kB │ gzip:  0.74 kB
+  dist/index.html                   1.32 kB │ gzip:  0.75 kB
+  dist/assets/index-BQdgvSVw.css   29.93 kB │ gzip:  6.24 kB
+  dist/assets/index-DbLV5UER.js   316.81 kB │ gzip: 95.36 kB
+  built in 11.60s
+  ```
+- **HTTP & Dev Server Verification**:
+  - Validated frontend dev server serving on `http://localhost:3001` (HTTP 200).
+  - Validated Vite proxy routing `/api/emails/stats` directly to backend on port 5000 with clean JSON response.
+- **Strict Emoji Audit**:
+  - Ran automated recursive unicode regex scanner across entire repository verifying 0 emojis.
   dist/assets/index-KHBwpMfv.css   23.77 kB │ gzip:  5.11 kB
   dist/assets/index-Dwq0xZf2.js   257.73 kB │ gzip: 80.98 kB
   built in 55.86s
