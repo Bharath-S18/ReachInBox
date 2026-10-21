@@ -6,6 +6,7 @@ import { EmailJobPayload, EmailJobResult } from '../types/queue.types.js';
 import { checkRateLimit, incrementRateLimit } from '../services/rateLimiter.service.js';
 import { SlackService } from '../services/slack.service.js';
 import { SmtpService } from '../services/smtp.service.js';
+import { ElasticsearchService } from '../services/elasticsearch.service.js';
 
 const concurrency = Number(process.env.WORKER_CONCURRENCY || 5);
 const defaultInterEmailDelayMs = Number(process.env.MIN_SEND_DELAY_MS || 2000);
@@ -72,6 +73,11 @@ export async function processEmailJob(
         scheduledAt: rescheduledAt,
       },
     });
+
+    // Real-time sync to Elasticsearch (Phase 6)
+    await ElasticsearchService.updateEmailJobStatus(jobId, 'RESCHEDULED', {
+      scheduledAt: rescheduledAt,
+    }).catch(() => null);
 
     // Dispatch live Slack Rate Limit Alert (Phase 4 integration)
     try {
@@ -148,6 +154,12 @@ export async function processEmailJob(
       },
     });
 
+    // Real-time sync to Elasticsearch (Phase 6)
+    await ElasticsearchService.updateEmailJobStatus(jobId, 'SENT', {
+      sentAt,
+      etherealMessageUrl: mailResult.previewUrl,
+    }).catch(() => null);
+
     console.log(`✅ [Worker] Successfully processed job ${jobId} to ${recipientEmail}`);
     if (mailResult.previewUrl) {
       console.log(`🔗 [Worker] Ethereal Preview URL: ${mailResult.previewUrl}`);
@@ -170,6 +182,11 @@ export async function processEmailJob(
         errorMessage: error.message,
       },
     });
+
+    // Real-time sync to Elasticsearch (Phase 6)
+    await ElasticsearchService.updateEmailJobStatus(jobId, 'FAILED', {
+      errorMessage: error.message,
+    }).catch(() => null);
 
     throw error;
   }

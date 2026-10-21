@@ -5,7 +5,10 @@ import { checkRedisHealth, getRedisClient } from './config/redis.js';
 import { emailQueue, getQueueStats } from './queues/email.queue.js';
 import { emailWorker } from './queues/email.worker.js';
 import { SmtpService } from './services/smtp.service.js';
+import { checkElasticsearchHealth } from './config/elasticsearch.js';
+import { ElasticsearchService } from './services/elasticsearch.service.js';
 import slackRouter from './routes/slack.routes.js';
+import emailRouter from './routes/email.routes.js';
 
 dotenv.config();
 
@@ -17,10 +20,12 @@ app.use(express.json());
 
 // Routes
 app.use('/api/slack', slackRouter);
+app.use('/api/emails', emailRouter);
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
   const redisHealthy = await checkRedisHealth();
+  const esHealth = await checkElasticsearchHealth();
   const queueStats = await getQueueStats().catch(() => null);
 
   res.json({
@@ -30,6 +35,7 @@ app.get('/health', async (req: Request, res: Response) => {
     redis: {
       connected: redisHealthy,
     },
+    elasticsearch: esHealth,
     queues: {
       emailQueue: queueStats,
     },
@@ -44,6 +50,9 @@ const server = app.listen(PORT, async () => {
   if (redisOk) {
     console.log('⚡ Redis & BullMQ Queue Engine active and ready for jobs');
   }
+
+  // Attempt Elasticsearch initialization with non-blocking graceful fallback
+  await ElasticsearchService.initIndex();
 });
 
 // Graceful shutdown

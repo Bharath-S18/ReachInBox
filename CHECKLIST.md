@@ -10,7 +10,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 - [x] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (6/6 completed)
 - [x] **Phase 4: Slack OAuth Integration & Live Alerting** (5/5 completed)
 - [x] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (4/4 completed)
-- [ ] **Phase 6: Elasticsearch Indexing & Full-Text Search** (0/4 completed)
+- [x] **Phase 6: Elasticsearch Indexing & Full-Text Search** (4/4 completed)
 - [ ] **Phase 7: Bull-Board & Express API Endpoints** (0/7 completed)
 - [ ] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (0/10 completed)
 - [ ] **Phase 9: Testing, Load Simulation & Resilience Verification** (0/4 completed)
@@ -67,10 +67,10 @@ This document tracks all implementation phases and granular subtasks for buildin
 ---
 
 ## 🔹 Phase 6: Elasticsearch Indexing & Full-Text Search
-- [ ] **6.1 Elasticsearch Client Setup**: Initialize Elasticsearch client with health check and graceful fallback.
-- [ ] **6.2 Index & Mapping Setup**: Create `emails` index with mappings for `recipientEmail`, `subject`, `body`, `status`, and timestamps.
-- [ ] **6.3 Real-Time Sync Pipeline**: Automatically index/update email documents upon scheduling, rescheduling, and sending.
-- [ ] **6.4 Search API Endpoint**: Create `GET /api/emails/search?q={query}&status={status}` with multi-field search and pagination.
+- [x] **6.1 Elasticsearch Client Setup**: Initialize Elasticsearch client with health check and graceful fallback.
+- [x] **6.2 Index & Mapping Setup**: Create `emails` index with mappings for `recipientEmail`, `subject`, `body`, `status`, and timestamps.
+- [x] **6.3 Real-Time Sync Pipeline**: Automatically index/update email documents upon scheduling, rescheduling, and sending.
+- [x] **6.4 Search API Endpoint**: Create `GET /api/emails/search?q={query}&status={status}` with multi-field search and pagination.
 
 ---
 
