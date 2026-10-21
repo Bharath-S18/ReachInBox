@@ -92,23 +92,22 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## Phase 8: Frontend Dashboard (Figma-Matched UI)
-- [x] **8.1 Styling & Design System**: Tailwind CSS theme configuration matching Vengeance UI dark aesthetic, custom dot-grid, glassmorphism, Space Grotesk, Inter, and JetBrains Mono typography.
-- [x] **8.2 Google OAuth Login**: Implement Google Login screen (`@react-oauth/google`) with clean authentication state handling and 1-click Demo Account evaluator access.
-- [x] **8.3 Header & Profile Bar**: Display user avatar, name, email, Slack connection status badge ("Connect Slack" / "Slack Connected"), and Logout button.
-- [x] **8.4 Tabbed Interface**: Segment views cleanly into **Scheduled Emails** and **Delivered Outreach**.
-- [x] **8.5 Compose Email Modal**:
-  - Subject and body inputs with variable interpolation hints.
-  - CSV lead file dropzone with instant client-side lead parser and preview chips.
-  - Scheduling start time picker.
-  - Multi-sender account selector with hourly limit preview.
-  - Hourly limit safety warning banner.
-  - Submit action with validation and toast alerts.
-- [x] **8.6 Scheduled Emails Table**: Recipient email, subject, scheduled time, status badge, and cancel action.
-- [x] **8.7 Sent Emails Table**: Recipient email, subject, sent time, status badge, and clickable "Ethereal Preview" link.
-- [x] **8.8 Live Search Bar**: Debounced search input connected to the dual-engine Elasticsearch/PostgreSQL search endpoint with `/` keyboard shortcut.
-- [x] **8.9 Slack Connection Modal / Redirect**: UI button triggering Slack OAuth flow, active channel indicator, and live test alert dispatcher.
-- [x] **8.10 Bull-Board Shortcut**: Dedicated button with real-time indicator to open the live BullMQ queue dashboard at `/admin/queues`.
+## Phase 8: Frontend Dashboard (Vengeance UI Landing Page & Outreach Engine)
+- [x] **8.1 Styling & Design System**: Tailwind CSS theme configuration matching Vengeance UI dark aesthetic, custom dot-grid, glassmorphism, Space Grotesk, Inter, and JetBrains Mono typography with `framer-motion` animations.
+- [x] **8.2 Dedicated Public Landing Page**:
+  - Spotlight navbar with ReachInbox branding, navigation anchors, GitHub star button, and Launch App CTA.
+  - Interactive live worker simulator hero section showing real-time BullMQ delayed job processing, rate checks, and Ethereal preview links.
+  - Infrastructure tech stack strip (BullMQ, Redis, PostgreSQL, Elasticsearch, Slack API, Ethereal SMTP).
+  - Bento features grid detailing distributed queues, multi-sender SMTP, atomic rate limits, and dual-engine search.
+  - Multi-column corporate footer with product, architecture, resources, and legal links.
+- [x] **8.3 Google OAuth & Executive Auth Modal**: High-end authentication dialog with authentic `@react-oauth/google` Google Sign-In and 1-click Demo Account evaluator access.
+- [x] **8.4 Uncluttered App Header**: ReachInbox clean branding (no PRO), spotlight search bar (`/` shortcut), view switcher between Campaigns and Queue Telemetry, Senders, Slack `#alerts`, and profile logout.
+- [x] **8.5 Integrated In-App BullMQ Queue Dashboard**: Dedicated telemetry dashboard rendering live worker threads, 2000ms throttle timer, delayed Redis queue counts, active rate limit boundaries, and live job stream inspector, with quick link to `/admin/queues`.
+- [x] **8.6 Outreach Campaigns Workspace**: Metric counter cards (Scheduled, Delivered, Rate Limited, Failed), segmented tabs for Scheduled Queue and Delivered Outreach with Ethereal preview links.
+- [x] **8.7 Compose Campaign Modal**: Drag-and-drop CSV lead dropzone with client-side parsing, sender selector with hourly limits, start time datetime picker, and rate limit warning banner.
+- [x] **8.8 Live Search Bar**: Debounced instant search querying Elasticsearch v8 with automatic PostgreSQL ILIKE fallback.
+- [x] **8.9 Slack Live Alerting Modal**: OAuth connect trigger, target channel inspection, and test notification dispatcher.
+- [x] **8.10 Outbound Senders Modal**: Multi-sender SMTP transporter manager with hourly limit configuration.
 
 ---
 
