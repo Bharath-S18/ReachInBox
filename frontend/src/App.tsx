@@ -5,10 +5,12 @@ import { ComposeModal } from './components/ComposeModal';
 import { QueueTelemetryView } from './components/dashboard/QueueTelemetryView';
 import { EmailTable } from './components/EmailTable';
 import { Header } from './components/Header';
+import { LandingArchitecture } from './components/landing/LandingArchitecture';
 import { LandingFeatures } from './components/landing/LandingFeatures';
 import { LandingFooter } from './components/landing/LandingFooter';
 import { LandingHero } from './components/landing/LandingHero';
 import { LandingNavbar } from './components/landing/LandingNavbar';
+import { LandingQueueSection } from './components/landing/LandingQueueSection';
 import { LandingTechStrip } from './components/landing/LandingTechStrip';
 import { SendersModal } from './components/SendersModal';
 import { SlackModal } from './components/SlackModal';
@@ -237,6 +239,7 @@ export function AppContent() {
             onRefresh={() => loadDashboardData()}
             onLogout={handleLogout}
             isRefreshing={isRefreshing}
+            onOpenLanding={() => setAppMode('landing')}
           />
 
           {/* Main Dashboard Workspace */}
@@ -301,6 +304,7 @@ export function AppContent() {
                 sentJobs={sentJobs}
                 loading={loading}
                 onRefresh={() => loadDashboardData()}
+                onCancelJob={handleCancelJob}
               />
             )}
           </main>
@@ -324,6 +328,14 @@ export function AppContent() {
             <LandingTechStrip />
 
             <LandingFeatures />
+
+            <LandingArchitecture />
+
+            <LandingQueueSection
+              onOpenDashboard={() => setAppMode('dashboard')}
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              isLoggedIn={!!user}
+            />
           </main>
         </>
       )}
