@@ -23,6 +23,8 @@ out/
 *.db-journal
 *.sqlite
 *.sqlite-journal
+*.rdb
+dump.rdb
 data/
 docker-data/
 
