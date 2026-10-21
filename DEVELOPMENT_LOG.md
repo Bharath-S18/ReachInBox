@@ -297,11 +297,111 @@ Authoring a dedicated integration test suite verifying every subtask:
 
 ---
 
+---
+
+# 🔹 Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
+
+### 1. What We Built & How We Proceeded
+- **Nodemailer Transporter Service (5.1)**:
+  - Authored [smtp.service.ts](file:///e:/ReachInBox/backend/src/services/smtp.service.ts) managing pooled `nodemailer.Transporter` instances (`pool: true`, `maxConnections: 5`, `maxMessages: 100`, `rateLimit: 14`).
+  - Implemented connection caching (`transporterPool: Map<string, Transporter>`) keyed by `senderId` to eliminate TCP handshake overhead on every email dispatch.
+  - Added connection verification utility `SmtpService.verifySenderConnection(senderId)` and shutdown pool disposal `SmtpService.closeAllTransporters()`.
+  - Added dynamic test account generator `SmtpService.provisionEtherealAccount(userId, accountName)` which provisions live Ethereal test inboxes and records credentials in Supabase PostgreSQL via Prisma.
+- **Multi-Sender Rotation (5.2)**:
+  - Built round-robin account rotator `SmtpService.getNextSenderForUser(userId)` allowing user campaigns to alternate across multiple sender accounts.
+  - Built batch recipient distributor `SmtpService.distributeRecipientsAcrossSenders(senders, recipientEmails)` distributing leads evenly across available senders.
+- **Test Message URL Capture & DB Persistence (5.3)**:
+  - Implemented `SmtpService.sendMailWithSender(options)` returning `{ success, messageId, previewUrl, response }`.
+  - Leveraged `nodemailer.getTestMessageUrl(info)` to capture the exact Ethereal web inbox viewer URL.
+  - Wired live email sending into [email.worker.ts](file:///e:/ReachInBox/backend/src/queues/email.worker.ts). The worker transitions jobs to `SENDING`, increments the Redis hourly counter, sends via pooled SMTP, marks `status: 'SENT'`, records `sentAt: new Date()`, and persists `etherealMessageUrl` for one-click inspection on the dashboard.
+- **Delivery Error Handling & Resilience (5.4)**:
+  - Handled fatal authentication or SMTP socket failures by capturing `error.message`, updating database status to `FAILED`, and storing `errorMessage`.
+  - Added automatic transporter pool invalidation (`invalidateTransporter`) on authentication errors (`EAUTH`, code 535) so damaged connections are immediately evicted from the cache.
+
+### 2. How Testing Was Conducted ([smtp.test.ts](file:///e:/ReachInBox/backend/src/test/smtp.test.ts))
+Authoring a dedicated end-to-end integration test suite verifying every subtask:
+```typescript
+// Test Flow in backend/src/test/smtp.test.ts:
+1. Pings Redis and verifies healthy connectivity.
+2. Creates transient test User in Supabase PostgreSQL.
+3. [5.1] Provisions live Ethereal sender account Alpha and verifies SMTP connection pool.
+4. [5.2] Provisions live Ethereal sender account Beta; verifies round-robin cycling and batch lead distribution.
+5. [5.3] Dispatches direct email via sender Alpha; validates messageId and ethereal.email preview URL format.
+6. [5.3 Worker Integration] Creates DB EmailJob with status PENDING, enqueues to BullMQ queue, lets worker process job, verifies DB status transitions to SENT, sentAt is populated, and etherealMessageUrl is stored.
+7. [5.4] Provisions faulty sender with bad credentials; enqueues failing job; verifies worker catches failure, updates DB to FAILED, and captures diagnostic error message.
+8. Performs clean DB teardown and closes all transporters, queues, and Redis connections.
+```
+
+**Actual Test Execution Output:**
+```text
+🧪 Starting Phase 5 (Multi-Sender SMTP Dispatcher & Ethereal) Verification Suite...
+
+🔌 Connected to Redis successfully
+⚙️ BullMQ Email Worker ready with concurrency: 5
+👉 [Setup] Creating transient test User...
+   User created: phase5-test-user-1792559292151 (tester-1792559292152@reachinbox.local)
+
+👉 [5.1] Testing Nodemailer Transporter with Real Ethereal SMTP Provisioning...
+   ✅ Sender 1 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email (Host: smtp.ethereal.email:587)
+   ✅ Sender 1 SMTP connection verified with active connection pool
+
+👉 [5.2] Testing Multi-Sender Rotation & Recipient Distribution...
+   ✅ Sender 2 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email
+   Round-Robin Sequence: [1] Ethereal Test Sender Alpha -> [2] Ethereal Test Sender Beta -> [3] Ethereal Test Sender Alpha
+   ✅ Multi-sender user round-robin selection verified
+   Recipient batch distribution:
+     Lead 1 (leadA@test.com) -> Sender: Ethereal Test Sender Alpha
+     Lead 2 (leadB@test.com) -> Sender: Ethereal Test Sender Beta
+     Lead 3 (leadC@test.com) -> Sender: Ethereal Test Sender Alpha
+     Lead 4 (leadD@test.com) -> Sender: Ethereal Test Sender Beta
+   ✅ Multi-sender batch lead distribution verified
+
+👉 [5.3] Testing Direct SMTP Send & Ethereal Message URL Capture...
+   Message ID: <33844e10-83e2-7333-ce47-6f9f495d5d06@ethereal.email>
+   Ethereal Preview URL: https://ethereal.email/message/athIvD.z5CbOhXHtathIwrJrKujo-Tk6AAAAAT2FATb5aUzAOgWNieXNCRg
+   ✅ Direct Ethereal SMTP dispatch succeeded and preview URL captured
+
+👉 [5.3 Worker Integration] Testing BullMQ Worker End-to-End Processing...
+   Created DB EmailJob phase5-queue-job-1792559299166 with status PENDING
+   Enqueued job into BullMQ. Waiting for worker to process...
+[Worker] Processing Job idemp-phase5-1792559299166 for recipient: queue-lead@example.com
+⏱️ [Worker] Applying throttling delay: 100ms
+✅ [Worker] Successfully processed job phase5-queue-job-1792559299166 to queue-lead@example.com
+🔗 [Worker] Ethereal Preview URL: https://ethereal.email/message/athIvD.z5CbOhXHtathIx50L.yTpB5Z2AAAAAnBMWi8Nh7LKyVWCZmakfYQ
+✨ Job idemp-phase5-1792559299166 completed with status: SENT
+   Final DB Status: SENT
+   Sent At: 2026-10-21T05:08:24.301Z
+   Ethereal Message URL in DB: https://ethereal.email/message/athIvD.z5CbOhXHtathIx50L.yTpB5Z2AAAAAnBMWi8Nh7LKyVWCZmakfYQ
+   ✅ End-to-end BullMQ worker execution verified with database persistence
+
+👉 [5.4] Testing Delivery Error Handling & Failure Logging...
+[Worker] Processing Job idemp-failed-1792559304720 for recipient: broken-lead@example.com
+❌ [Worker] Failed to deliver job phase5-failed-job-1792559304603: Invalid login: 535 Authentication failed
+💥 Job idemp-failed-1792559304720 failed: Invalid login: 535 Authentication failed
+   Faulty Job DB Status: FAILED
+   Captured Error Message: Invalid login: 535 Authentication failed
+   ✅ Delivery error captured and logged cleanly to database without crashing
+
+🧹 Cleaning up test records and shutting down connections...
+🎉 ALL PHASE 5 SUBTASKS VERIFIED SUCCESSFULLY!
+```
+
+---
+
+### 3. Engineering Challenges & Solutions
+
+#### ⚠️ Challenge 1: Transporter Connection Pool Lifecycles & Authentication Failures
+- **Problem**: When a sender account's password was changed or corrupted, pooled connections in Nodemailer remained connected in the idle pool and continued throwing connection errors on subsequent jobs.
+- **Solution**: Implemented an explicit `invalidateTransporter(senderId)` cache clearing method. In `sendMailWithSender`, if `error.code === 'EAUTH'` or `error.responseCode === 535`, the cache automatically closes and evicts the faulty transporter pool. When valid credentials are later supplied, a clean new pool is established without restarting the service.
+
+#### ⚠️ Challenge 2: Background Windows Redis Daemon Management
+- **Problem**: Between IDE sessions or terminal reboots, the portable Windows Redis daemon process (`redis-server.exe`) was not running, resulting in `ECONNREFUSED 127.0.0.1:6379` errors when starting queue workers.
+- **Solution**: Validated presence of `redis-server.exe` on Windows PATH (installed via `taizod1024.redis-windows-fork`), added health-check diagnostics in test harnesses, and launched Redis as a persistent background daemon.
+
+---
+
 ## 🔹 Roadmap of Upcoming Phases (To Be Logged Sequentially)
 
-- **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)**
-  - Dynamic Nodemailer transport per sender account with connection pooling.
-  - Live capture and persistence of Ethereal preview URLs (`getTestMessageUrl`).
 - **Phase 6: Elasticsearch Indexing & Full-Text Search**
   - Sync pipeline between Prisma updates and Elasticsearch index `emails`.
   - Full-text search endpoint across recipient, subject, and body.
@@ -313,3 +413,4 @@ Authoring a dedicated integration test suite verifying every subtask:
   - Google Login screen, tabbed Scheduled/Sent tables, lead dropzone, Bull-Board shortcut.
 - **Phase 9 & 10: Testing, Load Simulation & Submission Kit**
   - Server restart resilience test, 1000+ lead CSV stress test, documentation, demo video script.
+

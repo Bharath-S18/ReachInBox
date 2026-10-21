@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { checkRedisHealth, getRedisClient } from './config/redis.js';
 import { emailQueue, getQueueStats } from './queues/email.queue.js';
 import { emailWorker } from './queues/email.worker.js';
+import { SmtpService } from './services/smtp.service.js';
 import slackRouter from './routes/slack.routes.js';
 
 dotenv.config();
@@ -52,6 +53,7 @@ async function gracefulShutdown(signal: string) {
     try {
       await emailWorker.close();
       await emailQueue.close();
+      SmtpService.closeAllTransporters();
       await getRedisClient().quit();
       console.log('✅ Clean shutdown completed.');
       process.exit(0);

@@ -9,7 +9,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 - [x] **Phase 2: Relational Database Schema & Prisma ORM Layer** (7/7 completed)
 - [x] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (6/6 completed)
 - [x] **Phase 4: Slack OAuth Integration & Live Alerting** (5/5 completed)
-- [ ] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (0/4 completed)
+- [x] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (4/4 completed)
 - [ ] **Phase 6: Elasticsearch Indexing & Full-Text Search** (0/4 completed)
 - [ ] **Phase 7: Bull-Board & Express API Endpoints** (0/7 completed)
 - [ ] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (0/10 completed)
@@ -59,10 +59,10 @@ This document tracks all implementation phases and granular subtasks for buildin
 ---
 
 ## 🔹 Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
-- [ ] **5.1 Nodemailer Transporter**: Configure Nodemailer with Ethereal SMTP transport and connection pooling.
-- [ ] **5.2 Multi-Sender Rotation**: Support rotating or assigned sender accounts per email campaign.
-- [ ] **5.3 Test Message URL Capture**: Extract `nodemailer.getTestMessageUrl(info)` and save preview URLs to the database.
-- [ ] **5.4 Delivery Error Handling**: Capture failure reasons, log error states, and update job status accordingly.
+- [x] **5.1 Nodemailer Transporter**: Configure Nodemailer with Ethereal SMTP transport and connection pooling.
+- [x] **5.2 Multi-Sender Rotation**: Support rotating or assigned sender accounts per email campaign.
+- [x] **5.3 Test Message URL Capture**: Extract `nodemailer.getTestMessageUrl(info)` and save preview URLs to the database.
+- [x] **5.4 Delivery Error Handling**: Capture failure reasons, log error states, and update job status accordingly.
 
 ---
 

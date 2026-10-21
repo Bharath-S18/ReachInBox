@@ -5,6 +5,7 @@ import { EMAIL_QUEUE_NAME } from './email.queue.js';
 import { EmailJobPayload, EmailJobResult } from '../types/queue.types.js';
 import { checkRateLimit, incrementRateLimit } from '../services/rateLimiter.service.js';
 import { SlackService } from '../services/slack.service.js';
+import { SmtpService } from '../services/smtp.service.js';
 
 const concurrency = Number(process.env.WORKER_CONCURRENCY || 5);
 const defaultInterEmailDelayMs = Number(process.env.MIN_SEND_DELAY_MS || 2000);
@@ -128,24 +129,36 @@ export async function processEmailJob(
     // 5. Atomic Redis rate limit increment
     await incrementRateLimit(senderId, effectiveLimit);
 
-    // 6. Complete and update DB to SENT
-    // (Phase 5 will plug full Nodemailer Ethereal transport here)
+    // 6. Dispatch email via pooled SMTP transport (Phase 5 Ethereal integration)
+    const mailResult = await SmtpService.sendMailWithSender({
+      senderId,
+      to: recipientEmail,
+      subject,
+      body: data.body,
+    });
+
+    // 7. Complete and update DB to SENT with preview URL
     const sentAt = new Date();
     await prisma.emailJob.update({
       where: { id: jobId },
       data: {
         status: 'SENT',
         sentAt,
+        etherealMessageUrl: mailResult.previewUrl,
       },
     });
 
     console.log(`✅ [Worker] Successfully processed job ${jobId} to ${recipientEmail}`);
+    if (mailResult.previewUrl) {
+      console.log(`🔗 [Worker] Ethereal Preview URL: ${mailResult.previewUrl}`);
+    }
 
     return {
       success: true,
       jobId,
       recipientEmail,
       status: 'SENT',
+      messageUrl: mailResult.previewUrl,
     };
   } catch (error: any) {
     console.error(`❌ [Worker] Failed to deliver job ${jobId}:`, error.message);
