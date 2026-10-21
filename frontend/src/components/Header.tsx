@@ -1,0 +1,155 @@
+import React from 'react';
+import { ExternalLink, Hash, LogOut, Mail, RefreshCw, Search, ShieldCheck, Zap } from 'lucide-react';
+import { SlackStatus, User } from '../types';
+
+interface HeaderProps {
+  user: User;
+  slackStatus: SlackStatus | null;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  onOpenCompose: () => void;
+  onOpenSlackModal: () => void;
+  onOpenSendersModal: () => void;
+  onRefresh: () => void;
+  onLogout: () => void;
+  isRefreshing: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  user,
+  slackStatus,
+  searchQuery,
+  onSearchChange,
+  onOpenCompose,
+  onOpenSlackModal,
+  onOpenSendersModal,
+  onRefresh,
+  onLogout,
+  isRefreshing,
+}) => {
+  return (
+    <header className="sticky top-0 z-40 w-full border-b border-border-card bg-surface-dock backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Brand & Left Cluster */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-card bg-surface-card text-white shadow-glow-cyan transition-all hover:border-border-highlight">
+              <Mail className="h-4 w-4 text-border-highlight" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-lg font-bold tracking-tight text-white">REACHINBOX</span>
+                <span className="rounded border border-border-card bg-code-badge-bg px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-border-highlight">
+                  PRO
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Spotlight Search Input */}
+          <div className="relative hidden md:flex items-center">
+            <div className="flex w-72 items-center rounded-lg border border-border-card bg-surface-card px-3 py-1.5 transition-colors duration-150 focus-within:border-border-highlight hover:border-slate-700">
+              <Search className="mr-2 h-4 w-4 text-text-muted" />
+              <input
+                id="search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search emails or leads..."
+                className="w-full border-0 bg-transparent p-0 font-sans text-xs text-white placeholder:text-text-muted focus:outline-none focus:ring-0"
+              />
+              <kbd className="rounded border border-border-card bg-code-badge-bg px-1.5 py-0.5 font-mono text-[10px] text-text-muted">
+                /
+              </kbd>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Controls & Navigation */}
+        <div className="flex items-center gap-3">
+          {/* Refresh Button */}
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            title="Refresh Data"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-card bg-surface-card text-text-muted transition-all hover:border-border-highlight hover:text-white active:scale-95"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin text-border-highlight' : ''}`} />
+          </button>
+
+          {/* Senders Management */}
+          <button
+            onClick={onOpenSendersModal}
+            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border-card bg-surface-card px-3 py-1.5 font-mono text-xs text-text-muted transition-all hover:border-border-highlight hover:text-white active:scale-95"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-border-highlight" />
+            <span>Senders</span>
+          </button>
+
+          {/* Slack Live Alert Button */}
+          <button
+            onClick={onOpenSlackModal}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 font-mono text-xs transition-all active:scale-95 ${
+              slackStatus?.connected
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:border-emerald-400'
+                : 'border-border-card bg-surface-card text-text-muted hover:border-border-highlight hover:text-white'
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full ${slackStatus?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+            <Hash className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">
+              {slackStatus?.connected ? `#${slackStatus.channelName || 'alerts'}` : 'Connect Slack'}
+            </span>
+          </button>
+
+          {/* Bull-Board Admin Queues */}
+          <a
+            href="http://localhost:5000/admin/queues"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open Bull-Board Queue Monitor"
+            className="flex items-center gap-1.5 rounded-lg border border-border-card bg-surface-card px-3 py-1.5 font-mono text-xs text-text-muted transition-all hover:border-border-highlight hover:text-white active:scale-95"
+          >
+            <Zap className="h-3.5 w-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Bull-Board</span>
+            <ExternalLink className="h-3 w-3 opacity-60" />
+          </a>
+
+          {/* Compose Email Primary CTA */}
+          <button
+            onClick={onOpenCompose}
+            className="flex items-center gap-2 rounded-lg bg-white px-3.5 py-1.5 font-display text-xs font-semibold text-black shadow-glow-white transition-all hover:bg-slate-200 active:scale-95"
+          >
+            <span>+ Compose</span>
+          </button>
+
+          {/* User Profile Bar */}
+          <div className="flex items-center gap-2.5 border-l border-border-card pl-3">
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name || user.email}
+                className="h-8 w-8 rounded-full border border-border-card object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border-card bg-surface-card font-mono text-xs font-semibold text-border-highlight">
+                {(user.name || user.email).substring(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="hidden lg:block text-left">
+              <p className="font-sans text-xs font-medium text-white">{user.name || 'User'}</p>
+              <p className="font-mono text-[10px] text-text-muted">{user.email}</p>
+            </div>
+            <button
+              onClick={onLogout}
+              title="Logout"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-text-muted transition-all hover:border-border-card hover:bg-surface-card hover:text-red-400"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};

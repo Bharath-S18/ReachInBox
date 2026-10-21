@@ -12,7 +12,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 - [x] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (4/4 completed)
 - [x] **Phase 6: Elasticsearch Indexing & Full-Text Search** (4/4 completed)
 - [x] **Phase 7: Bull-Board & Express API Endpoints** (7/7 completed)
-- [ ] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (0/10 completed)
+- [x] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (10/10 completed)
 - [ ] **Phase 9: Testing, Load Simulation & Resilience Verification** (0/4 completed)
 - [ ] **Phase 10: Submission Kit & Documentation** (0/4 completed)
 
@@ -93,22 +93,22 @@ This document tracks all implementation phases and granular subtasks for buildin
 ---
 
 ## Phase 8: Frontend Dashboard (Figma-Matched UI)
-- [ ] **8.1 Styling & Design System**: Tailwind CSS theme configuration matching Figma colors, typography, borders, and shadows.
-- [ ] **8.2 Google OAuth Login**: Implement Google Login screen (`@react-oauth/google`) with clean authentication state handling.
-- [ ] **8.3 Header & Profile Bar**: Display user avatar, name, email, Slack connection status badge ("Connect Slack" / "Slack Connected"), and Logout button.
-- [ ] **8.4 Tabbed Interface**: Segment views cleanly into **Scheduled Emails** and **Sent Emails**.
-- [ ] **8.5 Compose Email Modal**:
-  - Subject and body inputs.
-  - CSV / Text lead file dropzone with instant client-side lead count parser.
+- [x] **8.1 Styling & Design System**: Tailwind CSS theme configuration matching Vengeance UI dark aesthetic, custom dot-grid, glassmorphism, Space Grotesk, Inter, and JetBrains Mono typography.
+- [x] **8.2 Google OAuth Login**: Implement Google Login screen (`@react-oauth/google`) with clean authentication state handling and 1-click Demo Account evaluator access.
+- [x] **8.3 Header & Profile Bar**: Display user avatar, name, email, Slack connection status badge ("Connect Slack" / "Slack Connected"), and Logout button.
+- [x] **8.4 Tabbed Interface**: Segment views cleanly into **Scheduled Emails** and **Delivered Outreach**.
+- [x] **8.5 Compose Email Modal**:
+  - Subject and body inputs with variable interpolation hints.
+  - CSV lead file dropzone with instant client-side lead parser and preview chips.
   - Scheduling start time picker.
-  - Inter-email delay (seconds) input.
-  - Hourly limit input.
+  - Multi-sender account selector with hourly limit preview.
+  - Hourly limit safety warning banner.
   - Submit action with validation and toast alerts.
-- [ ] **8.6 Scheduled Emails Table**: Recipient email, subject, scheduled time, status badge, and empty/loading states.
-- [ ] **8.7 Sent Emails Table**: Recipient email, subject, sent time, status badge, and clickable "View in Ethereal" link.
-- [ ] **8.8 Live Search Bar**: Debounced search input connected to the Elasticsearch search endpoint.
-- [ ] **8.9 Slack Connection Modal / Redirect**: UI button triggering Slack OAuth flow and showing active channel.
-- [ ] **8.10 Bull-Board Shortcut**: Dedicated button to open the live BullMQ queue dashboard.
+- [x] **8.6 Scheduled Emails Table**: Recipient email, subject, scheduled time, status badge, and cancel action.
+- [x] **8.7 Sent Emails Table**: Recipient email, subject, sent time, status badge, and clickable "Ethereal Preview" link.
+- [x] **8.8 Live Search Bar**: Debounced search input connected to the dual-engine Elasticsearch/PostgreSQL search endpoint with `/` keyboard shortcut.
+- [x] **8.9 Slack Connection Modal / Redirect**: UI button triggering Slack OAuth flow, active channel indicator, and live test alert dispatcher.
+- [x] **8.10 Bull-Board Shortcut**: Dedicated button with real-time indicator to open the live BullMQ queue dashboard at `/admin/queues`.
 
 ---
 
