@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EmailJobStatus {
+  PENDING
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  RESCHEDULED
+}
+
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String
+  avatar          String?
+  createdAt       DateTime          @default(now())
+  senderAccounts  SenderAccount[]
+  emailJobs       EmailJob[]
+  slackIntegration SlackIntegration?
+}
+
+model SenderAccount {
+  id          String     @id @default(cuid())
+  userId      String
+  name        String
+  email       String
+  host        String
+  port        Int
+  username    String
+  password    String
+  hourlyLimit Int        @default(50)
+  createdAt   DateTime   @default(now())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailJobs   EmailJob[]
+
+  @@index([userId])
+}
+
+model EmailJob {
+  id                 String         @id @default(cuid())
+  idempotencyKey     String         @unique
+  userId             String
+  senderId           String
+  recipientEmail     String
+  subject            String
+  body               String
+  scheduledAt        DateTime
+  sentAt             DateTime?
+  status             EmailJobStatus  @default(PENDING)
+  attempts           Int            @default(0)
+  etherealMessageUrl String?
+  errorMessage       String?
+  metadata           Json?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender             SenderAccount  @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, scheduledAt])
+  @@index([senderId, scheduledAt])
+}
+
+model SlackIntegration {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  slackTeamId       String?
+  accessToken       String
+  channelId         String?
+  channelName       String?
+  incomingWebhookUrl String?
+  connectedAt       DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
