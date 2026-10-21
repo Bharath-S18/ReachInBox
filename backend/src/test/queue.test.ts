@@ -5,19 +5,19 @@ import { checkRateLimit, incrementRateLimit, getHourlyWindowKey } from '../servi
 import { prisma } from '../lib/prisma.js';
 
 async function runPhase3Verification() {
-  console.log('🧪 Starting Phase 3 (BullMQ & Rate Limiting) Verification Suite...\n');
+  console.log(' Starting Phase 3 (BullMQ & Rate Limiting) Verification Suite...\n');
 
   // Test 3.1: Redis & Queue Initialization
-  console.log('👉 [3.1] Testing Redis & Queue Initialization...');
+  console.log(' [3.1] Testing Redis & Queue Initialization...');
   const isHealthy = await checkRedisHealth();
   if (!isHealthy) throw new Error('Redis is not healthy');
-  console.log('   ✅ Redis ping: OK');
+  console.log('    Redis ping: OK');
 
   const initialStats = await getQueueStats();
-  console.log('   ✅ BullMQ Queue instantiated. Current stats:', initialStats);
+  console.log('    BullMQ Queue instantiated. Current stats:', initialStats);
 
   // Test 3.4: Redis-Backed Hourly Rate Limiting Counters
-  console.log('\n👉 [3.4] Testing Redis-backed Hourly Rate Limiting...');
+  console.log('\n [3.4] Testing Redis-backed Hourly Rate Limiting...');
   const testSenderId = `test-sender-${Date.now()}`;
   const testLimit = 3;
 
@@ -38,10 +38,10 @@ async function runPhase3Verification() {
   if (fourthCheck.allowed) {
     throw new Error('Rate limit check should have blocked 4th email');
   }
-  console.log('   ✅ Redis rate limiter successfully enforced hourly boundary and counted atomically');
+  console.log('    Redis rate limiter successfully enforced hourly boundary and counted atomically');
 
   // Test 3.2, 3.3, 3.5 & 3.6: End-to-end Worker with DB Idempotency & Rescheduling
-  console.log('\n👉 [3.2, 3.3, 3.5, 3.6] Testing End-to-End Worker Processing & Idempotency...');
+  console.log('\n [3.2, 3.3, 3.5, 3.6] Testing End-to-End Worker Processing & Idempotency...');
 
   // Setup test user & sender in DB
   const user = await prisma.user.upsert({
@@ -111,7 +111,7 @@ async function runPhase3Verification() {
   if (completedJob1?.status !== 'SENT') {
     throw new Error(`Job 1 should be SENT, got ${completedJob1?.status}`);
   }
-  console.log('   ✅ Job 1 completed and marked SENT in database');
+  console.log('    Job 1 completed and marked SENT in database');
 
   // Test Idempotency: Re-enqueuing Job 1 should be SKIPPED
   console.log('   Testing Idempotency: re-enqueuing Job 1...');
@@ -127,12 +127,12 @@ async function runPhase3Verification() {
   };
   await enqueueEmailJob(idempotentPayload);
   await new Promise((resolve) => setTimeout(resolve, 1500));
-  console.log('   ✅ Idempotency verified: duplicate job skipped cleanly');
+  console.log('    Idempotency verified: duplicate job skipped cleanly');
 
   // Job 2: Should hit rate limit and trigger order-preserving rescheduling
   let alertTriggered = false;
   setRateLimitAlertHandler(async (alert) => {
-    console.log(`   📢 [Alert Hook] Live Rate Limit Alert received: sender=${alert.senderId}, count=${alert.currentCount}/${alert.hourlyLimit}`);
+    console.log(`    [Alert Hook] Live Rate Limit Alert received: sender=${alert.senderId}, count=${alert.currentCount}/${alert.hourlyLimit}`);
     alertTriggered = true;
   });
 
@@ -174,11 +174,11 @@ async function runPhase3Verification() {
   if (!alertTriggered) {
     throw new Error('Rate limit alert handler was not triggered');
   }
-  console.log(`   ✅ Job 2 successfully moved to delayed state with status RESCHEDULED`);
-  console.log(`   ✅ Live Alert handler triggered for Phase 4 Slack integration`);
+  console.log(`    Job 2 successfully moved to delayed state with status RESCHEDULED`);
+  console.log(`    Live Alert handler triggered for Phase 4 Slack integration`);
 
   // Cleanup
-  console.log('\n🧹 Cleaning up test records...');
+  console.log('\n Cleaning up test records...');
   await prisma.emailJob.deleteMany({ where: { id: { in: [job1Id, job2Id] } } });
   await prisma.senderAccount.delete({ where: { id: 'phase3-test-sender' } });
   await prisma.user.delete({ where: { id: user.id } });
@@ -187,10 +187,10 @@ async function runPhase3Verification() {
   await redis.quit();
   await prisma.$disconnect();
 
-  console.log('\n🎉 ALL PHASE 3 SUBTASKS VERIFIED SUCCESSFULLY!');
+  console.log('\n ALL PHASE 3 SUBTASKS VERIFIED SUCCESSFULLY!');
 }
 
 runPhase3Verification().catch((err) => {
-  console.error('\n❌ Phase 3 Verification Failed:', err);
+  console.error('\n Phase 3 Verification Failed:', err);
   process.exit(1);
 });

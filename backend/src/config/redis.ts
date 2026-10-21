@@ -23,11 +23,11 @@ export function getRedisClient(): Redis {
     redisClient = new Redis(redisConfig);
 
     redisClient.on('connect', () => {
-      console.log('🔌 Connected to Redis successfully');
+      console.log('[INFO] Connected to Redis successfully');
     });
 
     redisClient.on('error', (err) => {
-      console.error('❌ Redis Connection Error:', err.message);
+      console.error('[ERROR] Redis connection error:', err.message);
     });
   }
 

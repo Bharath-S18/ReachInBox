@@ -183,7 +183,7 @@ export class SlackService {
       // Graceful fallback: If no webhook URL is found, log cleanly and exit safely
       if (!webhookUrl || webhookUrl.trim() === '') {
         console.log(
-          `ℹ️ [SlackAlert] User ${userId} has not connected Slack. Gracefully skipping Slack alert.`
+          `[INFO] [SlackAlert] User ${userId} has not connected Slack. Gracefully skipping Slack alert.`
         );
         return false;
       }
@@ -193,14 +193,13 @@ export class SlackService {
 
       // Formatted Slack message using Block Kit
       const messagePayload = {
-        text: `⚠️ Rate Limit Alert: Sender ${senderDisplay} reached hourly threshold`,
+        text: `[ALERT] Rate Limit Reached: Sender ${senderDisplay} reached hourly threshold`,
         blocks: [
           {
             type: 'header',
             text: {
               type: 'plain_text',
-              text: '⚠️ ReachInbox Hourly Rate Limit Reached',
-              emoji: true,
+              text: '[ALERT] ReachInbox Hourly Rate Limit Reached',
             },
           },
           {
@@ -234,7 +233,7 @@ export class SlackService {
             elements: [
               {
                 type: 'mrkdwn',
-                text: `🔒 _Idempotent scheduler: Zero emails will be dropped or duplicated._`
+                text: `[POLICY] Idempotent scheduler: Zero emails will be dropped or duplicated.`,
               },
             ],
           },
@@ -248,13 +247,13 @@ export class SlackService {
         timeout: 8000,
       });
 
-      console.log(`📢 [SlackAlert] Real-time rate limit notification delivered to Slack successfully!`);
+      console.log(`[SUCCESS] [SlackAlert] Real-time rate limit notification delivered to Slack successfully.`);
       return true;
     } catch (err: any) {
       if (axios.isAxiosError(err) && err.response) {
-        console.warn(`⚠️ [SlackAlert] Slack webhook returned HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        console.warn(`[WARN] [SlackAlert] Slack webhook returned HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
       } else {
-        console.error(`⚠️ [SlackAlert] Error dispatching Slack rate limit alert:`, err.message);
+        console.error(`[ERROR] [SlackAlert] Error dispatching Slack rate limit alert:`, err.message);
       }
       return false;
     }

@@ -1,13 +1,19 @@
 import { Router } from 'express';
-import { searchEmails } from '../controllers/email.controller.js';
+import {
+  scheduleEmails,
+  getScheduledEmails,
+  getSentEmails,
+  getEmailStats,
+  searchEmails,
+} from '../controllers/email.controller.js';
+import { requireAuth, optionalAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-/**
- * GET /api/emails/search
- * Full-text multi-field search across recipientEmail, subject, and body
- * Supports status filtering and pagination, with automated database fallback
- */
-router.get('/search', searchEmails);
+router.post('/schedule', requireAuth, scheduleEmails);
+router.get('/scheduled', requireAuth, getScheduledEmails);
+router.get('/sent', requireAuth, getSentEmails);
+router.get('/stats', requireAuth, getEmailStats);
+router.get('/search', optionalAuth, searchEmails);
 
 export default router;

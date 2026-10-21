@@ -1,24 +1,24 @@
-# 📋 ReachInbox Email Job Scheduler – Master Progress Checklist
+# ReachInbox Email Job Scheduler - Master Progress Checklist
 
 This document tracks all implementation phases and granular subtasks for building the production-grade email scheduler service and dashboard.
 
 ---
 
-## 📌 Overall Progress Summary
+## Overall Progress Summary
 - [x] **Phase 1: Project Scaffolding & Infrastructure** (6/6 completed)
 - [x] **Phase 2: Relational Database Schema & Prisma ORM Layer** (7/7 completed)
 - [x] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (6/6 completed)
 - [x] **Phase 4: Slack OAuth Integration & Live Alerting** (5/5 completed)
 - [x] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (4/4 completed)
 - [x] **Phase 6: Elasticsearch Indexing & Full-Text Search** (4/4 completed)
-- [ ] **Phase 7: Bull-Board & Express API Endpoints** (0/7 completed)
+- [x] **Phase 7: Bull-Board & Express API Endpoints** (7/7 completed)
 - [ ] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (0/10 completed)
 - [ ] **Phase 9: Testing, Load Simulation & Resilience Verification** (0/4 completed)
 - [ ] **Phase 10: Submission Kit & Documentation** (0/4 completed)
 
 ---
 
-## 🔹 Phase 1: Project Scaffolding & Infrastructure
+## Phase 1: Project Scaffolding & Infrastructure
 - [x] **1.1 Monorepo Setup**: Initialize root `package.json` with workspace configuration and unified run scripts (`npm run dev`, `npm run build`).
 - [x] **1.2 Backend Scaffolding**: Setup `backend/` directory with `package.json`, `tsconfig.json`, and initial TypeScript build pipeline.
 - [x] **1.3 Frontend Scaffolding**: Setup `frontend/` directory with React, TypeScript, and Tailwind CSS.
@@ -28,7 +28,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 2: Relational Database Schema & Prisma ORM Layer
+## Phase 2: Relational Database Schema & Prisma ORM Layer
 - [x] **2.1 Prisma Setup**: Initialize Prisma with PostgreSQL for Supabase-hosted relational storage and generate the Prisma Client.
 - [x] **2.2 User Model**: Define `User` model for Google OAuth profiles (`id`, `email`, `name`, `avatar`, `createdAt`).
 - [x] **2.3 SenderAccount Model**: Define `SenderAccount` model for multi-sender SMTP credentials (`id`, `email`, `host`, `port`, `user`, `pass`, `hourlyLimit`).
@@ -39,7 +39,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
+## Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
 - [x] **3.1 Queue Initialization**: Create BullMQ `emailQueue` and `emailWorker` with persistent Redis connection.
 - [x] **3.2 Worker Concurrency**: Support configurable worker concurrency via `WORKER_CONCURRENCY` env variable.
 - [x] **3.3 Inter-Email Throttling Delay**: Enforce minimum delay between consecutive email sends (e.g., 2000ms) to avoid provider throttling.
@@ -49,7 +49,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 4: Slack OAuth Integration & Live Alerting
+## Phase 4: Slack OAuth Integration & Live Alerting
 - [x] **4.1 Slack OAuth Flow Initiation**: Create `GET /api/slack/authorize` to redirect user to Slack OAuth approval screen with required scopes.
 - [x] **4.2 Slack OAuth Callback**: Create `GET /api/slack/callback` to exchange code for bot access token and incoming webhook URL.
 - [x] **4.3 Slack Status & Disconnect**: Create `GET /api/slack/status` and `POST /api/slack/disconnect` endpoints for managing the connection.
@@ -58,7 +58,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
+## Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
 - [x] **5.1 Nodemailer Transporter**: Configure Nodemailer with Ethereal SMTP transport and connection pooling.
 - [x] **5.2 Multi-Sender Rotation**: Support rotating or assigned sender accounts per email campaign.
 - [x] **5.3 Test Message URL Capture**: Extract `nodemailer.getTestMessageUrl(info)` and save preview URLs to the database.
@@ -66,7 +66,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 6: Elasticsearch Indexing & Full-Text Search
+## Phase 6: Elasticsearch Indexing & Full-Text Search
 - [x] **6.1 Elasticsearch Client Setup**: Initialize Elasticsearch client with health check and graceful fallback.
 - [x] **6.2 Index & Mapping Setup**: Create `emails` index with mappings for `recipientEmail`, `subject`, `body`, `status`, and timestamps.
 - [x] **6.3 Real-Time Sync Pipeline**: Automatically index/update email documents upon scheduling, rescheduling, and sending.
@@ -74,25 +74,25 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 7: Bull-Board & Express API Endpoints
-- [ ] **7.1 Authentication Endpoints**:
+## Phase 7: Bull-Board & Express API Endpoints
+- [x] **7.1 Authentication Endpoints**:
   - `POST /api/auth/google` (Google ID token verification via `google-auth-library` and JWT issue).
   - `GET /api/auth/me` (retrieve active session and user profile).
-- [ ] **7.2 Email Scheduling Endpoint**:
+- [x] **7.2 Email Scheduling Endpoint**:
   - `POST /api/emails/schedule` (batch CSV recipient parsing, DB creation, and BullMQ delayed job enqueueing).
-- [ ] **7.3 Scheduled Emails Endpoint**:
+- [x] **7.3 Scheduled Emails Endpoint**:
   - `GET /api/emails/scheduled` (paginated list of upcoming jobs with filters).
-- [ ] **7.4 Sent Emails Endpoint**:
+- [x] **7.4 Sent Emails Endpoint**:
   - `GET /api/emails/sent` (paginated list of delivered and failed jobs with Ethereal preview links).
-- [ ] **7.5 Stats Endpoint**:
+- [x] **7.5 Stats Endpoint**:
   - `GET /api/emails/stats` (counts for scheduled, sent, failed, and rate-limited jobs).
-- [ ] **7.6 Sender Accounts Endpoint**:
+- [x] **7.6 Sender Accounts Endpoint**:
   - `GET /api/senders` & `POST /api/senders` (manage and inspect sender accounts).
-- [ ] **7.7 Bull-Board UI**: Mount `@bull-board/express` at `/admin/queues` for real-time visual queue monitoring.
+- [x] **7.7 Bull-Board UI**: Mount `@bull-board/express` at `/admin/queues` for real-time visual queue monitoring.
 
 ---
 
-## 🔹 Phase 8: Frontend Dashboard (Figma-Matched UI)
+## Phase 8: Frontend Dashboard (Figma-Matched UI)
 - [ ] **8.1 Styling & Design System**: Tailwind CSS theme configuration matching Figma colors, typography, borders, and shadows.
 - [ ] **8.2 Google OAuth Login**: Implement Google Login screen (`@react-oauth/google`) with clean authentication state handling.
 - [ ] **8.3 Header & Profile Bar**: Display user avatar, name, email, Slack connection status badge ("Connect Slack" / "Slack Connected"), and Logout button.
@@ -112,7 +112,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 9: Testing, Load Simulation & Resilience Verification
+## Phase 9: Testing, Load Simulation & Resilience Verification
 - [ ] **9.1 Server Restart Resilience Test**: Schedule jobs into future -> kill backend process -> restart -> verify execution on time without re-sending past emails.
 - [ ] **9.2 Hourly Rate Limit & Slack Alert Test**: Enqueue batch exceeding hourly limit -> verify threshold cutoff, reschedule delay, and live Slack notification.
 - [ ] **9.3 Concurrency & Throttling Test**: Run multiple jobs concurrently and verify inter-email delay is strictly respected.
@@ -120,7 +120,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 
 ---
 
-## 🔹 Phase 10: Submission Kit & Documentation
+## Phase 10: Submission Kit & Documentation
 - [ ] **10.1 Comprehensive README.md**: Complete documentation of architecture, setup instructions, BullMQ scheduling mechanics, rate-limiting design, and concurrency.
 - [ ] **10.2 Environment Configuration Guide**: Step-by-step instructions for Google OAuth, Slack App, Ethereal, and Docker.
 - [ ] **10.3 5-Minute Demo Video Script**: Step-by-step checklist of flows to record for the demo video.

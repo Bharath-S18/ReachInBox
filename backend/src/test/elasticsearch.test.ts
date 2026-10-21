@@ -8,7 +8,7 @@ import express from 'express';
 import emailRouter from '../routes/email.routes.js';
 
 async function runElasticsearchVerificationSuite() {
-  console.log('🧪 Starting Phase 6 (Elasticsearch Indexing & Full-Text Search) Verification Suite...\n');
+  console.log(' Starting Phase 6 (Elasticsearch Indexing & Full-Text Search) Verification Suite...\n');
 
   const testUserId = `phase6-user-${Date.now()}`;
   let mockServer: http.Server | null = null;
@@ -18,19 +18,19 @@ async function runElasticsearchVerificationSuite() {
     // =========================================================================
     // 6.1 Elasticsearch Client Setup & Health Check with Graceful Fallback
     // =========================================================================
-    console.log('👉 [6.1] Testing Elasticsearch Client Health Check (Offline Graceful Fallback)...');
+    console.log(' [6.1] Testing Elasticsearch Client Health Check (Offline Graceful Fallback)...');
     const defaultHealth = await checkElasticsearchHealth();
     console.log('   Default Node Health:', defaultHealth);
     if (defaultHealth.healthy) {
-      console.log('   ✅ Real Elasticsearch node detected online on port 9200');
+      console.log('    Real Elasticsearch node detected online on port 9200');
     } else {
-      console.log('   ✅ Offline state cleanly handled without unhandled exceptions');
+      console.log('    Offline state cleanly handled without unhandled exceptions');
     }
 
     // =========================================================================
     // 6.2 & 6.3 & 6.4 Active Elasticsearch Client & Search Verification (Mock Cluster)
     // =========================================================================
-    console.log('\n👉 [6.2 & 6.3] Testing Active Elasticsearch Pipeline with Transient Cluster...');
+    console.log('\n [6.2 & 6.3] Testing Active Elasticsearch Pipeline with Transient Cluster...');
     const MOCK_PORT = 9205;
     let indexCreated = false;
     const indexedDocuments: Record<string, any> = {};
@@ -143,14 +143,14 @@ async function runElasticsearchVerificationSuite() {
     if (!clusterHealth.healthy) {
       throw new Error('Mock Elasticsearch health check failed');
     }
-    console.log('   ✅ Cluster health check verified');
+    console.log('    Cluster health check verified');
 
     // Test index initialization with schema mappings
     const initResult = await ElasticsearchService.initIndex('test-emails');
     if (!initResult || !indexCreated) {
       throw new Error('ElasticsearchService.initIndex failed');
     }
-    console.log('   ✅ Index test-emails created with schema mappings');
+    console.log('    Index test-emails created with schema mappings');
 
     // Test document indexing
     const testDoc: EmailJobDocument = {
@@ -168,7 +168,7 @@ async function runElasticsearchVerificationSuite() {
     if (!indexSuccess || !indexedDocuments['es-test-job-001']) {
       throw new Error('Document indexing failed');
     }
-    console.log('   ✅ Document indexed in real time into Elasticsearch');
+    console.log('    Document indexed in real time into Elasticsearch');
 
     // Test document status update
     const updateSuccess = await ElasticsearchService.updateEmailJobStatus(
@@ -183,7 +183,7 @@ async function runElasticsearchVerificationSuite() {
     if (!updateSuccess || indexedDocuments['es-test-job-001']?.status !== 'SENT') {
       throw new Error('Document update in Elasticsearch failed');
     }
-    console.log('   ✅ Real-time status update to SENT verified in Elasticsearch index');
+    console.log('    Real-time status update to SENT verified in Elasticsearch index');
 
     // Test search via Elasticsearch
     const esSearchResults = await ElasticsearchService.searchEmails(
@@ -198,7 +198,7 @@ async function runElasticsearchVerificationSuite() {
     if (esSearchResults.source !== 'ELASTICSEARCH' || esSearchResults.total === 0) {
       throw new Error('Elasticsearch search execution failed');
     }
-    console.log('   ✅ Elasticsearch multi-field search execution verified\n');
+    console.log('    Elasticsearch multi-field search execution verified\n');
 
     // Close mock cluster and reset service to test database fallback
     mockServer.close();
@@ -208,7 +208,7 @@ async function runElasticsearchVerificationSuite() {
     // =========================================================================
     // 6.3 & 6.4 Graceful Fallback & PostgreSQL Full-Text Search
     // =========================================================================
-    console.log('👉 [6.3 & 6.4] Testing Graceful Fallback with PostgreSQL Full-Text Search...');
+    console.log(' [6.3 & 6.4] Testing Graceful Fallback with PostgreSQL Full-Text Search...');
 
     // Create transient user and sender
     await prisma.user.create({
@@ -284,7 +284,7 @@ async function runElasticsearchVerificationSuite() {
     if (searchSubjectResult.total !== 1 || searchSubjectResult.source !== 'DATABASE_FALLBACK') {
       throw new Error(`Expected 1 match from database fallback, got: ${searchSubjectResult.total}`);
     }
-    console.log('   ✅ Subject query verified via database fallback');
+    console.log('    Subject query verified via database fallback');
 
     // 2. Multi-match search: by recipient domain 'cloudinfra.io'
     const searchRecipientResult = await ElasticsearchService.searchEmails({
@@ -295,7 +295,7 @@ async function runElasticsearchVerificationSuite() {
     if (searchRecipientResult.total !== 1) {
       throw new Error(`Expected 1 match for recipient search, got: ${searchRecipientResult.total}`);
     }
-    console.log('   ✅ Recipient email query verified via database fallback');
+    console.log('    Recipient email query verified via database fallback');
 
     // 3. Multi-match search: by body keyword 'BullMQ'
     const searchBodyResult = await ElasticsearchService.searchEmails({
@@ -306,7 +306,7 @@ async function runElasticsearchVerificationSuite() {
     if (searchBodyResult.total !== 1) {
       throw new Error(`Expected 1 match for body search, got: ${searchBodyResult.total}`);
     }
-    console.log('   ✅ Body text query verified via database fallback');
+    console.log('    Body text query verified via database fallback');
 
     // 4. Status filter test: status = 'SENT'
     const searchStatusResult = await ElasticsearchService.searchEmails({
@@ -317,7 +317,7 @@ async function runElasticsearchVerificationSuite() {
     if (searchStatusResult.total !== 1 || searchStatusResult.data[0].status !== 'SENT') {
       throw new Error(`Expected 1 SENT email, got: ${searchStatusResult.total}`);
     }
-    console.log('   ✅ Status filtering verified');
+    console.log('    Status filtering verified');
 
     // 5. Pagination test: limit = 2
     const searchPaginationResult = await ElasticsearchService.searchEmails({
@@ -329,12 +329,12 @@ async function runElasticsearchVerificationSuite() {
     if (searchPaginationResult.data.length !== 2 || searchPaginationResult.totalPages !== 2) {
       throw new Error('Pagination calculations failed');
     }
-    console.log('   ✅ Pagination verified\n');
+    console.log('    Pagination verified\n');
 
     // =========================================================================
     // 6.4 Express HTTP Search API Route Test (GET /api/emails/search)
     // =========================================================================
-    console.log('👉 [6.4] Testing Express Search API Route (GET /api/emails/search)...');
+    console.log(' [6.4] Testing Express Search API Route (GET /api/emails/search)...');
     const app = express();
     app.use(express.json());
     app.use('/api/emails', emailRouter);
@@ -357,10 +357,10 @@ async function runElasticsearchVerificationSuite() {
     if (!apiResponse.data.success || apiResponse.data.total !== 1) {
       throw new Error('Express API search endpoint returned unexpected response');
     }
-    console.log('   ✅ Express GET /api/emails/search endpoint verified with axios\n');
+    console.log('    Express GET /api/emails/search endpoint verified with axios\n');
 
   } finally {
-    console.log('🧹 Cleaning up test resources...');
+    console.log(' Cleaning up test resources...');
     if (mockServer) {
       mockServer.close();
     }
@@ -385,12 +385,12 @@ async function runElasticsearchVerificationSuite() {
     }
   }
 
-  console.log('🎉 ALL PHASE 6 SUBTASKS VERIFIED SUCCESSFULLY!\n');
+  console.log(' ALL PHASE 6 SUBTASKS VERIFIED SUCCESSFULLY!\n');
 }
 
 runElasticsearchVerificationSuite()
   .then(() => process.exit(0))
   .catch((err) => {
-    console.error('❌ Phase 6 Verification Failed:', err);
+    console.error(' Phase 6 Verification Failed:', err);
     process.exit(1);
   });
