@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { checkRedisHealth, getRedisClient } from './config/redis.js';
 import { emailQueue, getQueueStats } from './queues/email.queue.js';
 import { emailWorker } from './queues/email.worker.js';
+import slackRouter from './routes/slack.routes.js';
 
 dotenv.config();
 
@@ -12,6 +13,9 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// Routes
+app.use('/api/slack', slackRouter);
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {

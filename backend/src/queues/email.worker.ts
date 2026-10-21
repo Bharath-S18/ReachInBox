@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { EMAIL_QUEUE_NAME } from './email.queue.js';
 import { EmailJobPayload, EmailJobResult } from '../types/queue.types.js';
 import { checkRateLimit, incrementRateLimit } from '../services/rateLimiter.service.js';
+import { SlackService } from '../services/slack.service.js';
 
 const concurrency = Number(process.env.WORKER_CONCURRENCY || 5);
 const defaultInterEmailDelayMs = Number(process.env.MIN_SEND_DELAY_MS || 2000);
@@ -71,7 +72,25 @@ export async function processEmailJob(
       },
     });
 
-    // Notify alert subscriber (e.g., Slack)
+    // Dispatch live Slack Rate Limit Alert (Phase 4 integration)
+    try {
+      const senderRecord = await prisma.senderAccount.findUnique({
+        where: { id: senderId },
+        select: { email: true },
+      });
+
+      await SlackService.sendRateLimitAlert(data.userId, {
+        senderId,
+        senderEmail: senderRecord?.email || senderId,
+        currentCount: rateCheck.currentCount,
+        hourlyLimit: effectiveLimit,
+        rescheduledTo: rescheduledAt,
+      });
+    } catch (slackErr) {
+      console.warn('Slack rate limit alert dispatch failed gracefully:', slackErr);
+    }
+
+    // Also notify any custom registered alert hook (used for automated tests)
     if (onRateLimitReached) {
       try {
         await onRateLimitReached({

@@ -8,7 +8,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 - [x] **Phase 1: Project Scaffolding & Infrastructure** (6/6 completed)
 - [x] **Phase 2: Relational Database Schema & Prisma ORM Layer** (7/7 completed)
 - [x] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (6/6 completed)
-- [ ] **Phase 4: Slack OAuth Integration & Live Alerting** (0/5 completed)
+- [x] **Phase 4: Slack OAuth Integration & Live Alerting** (5/5 completed)
 - [ ] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (0/4 completed)
 - [ ] **Phase 6: Elasticsearch Indexing & Full-Text Search** (0/4 completed)
 - [ ] **Phase 7: Bull-Board & Express API Endpoints** (0/7 completed)
@@ -50,11 +50,11 @@ This document tracks all implementation phases and granular subtasks for buildin
 ---
 
 ## 🔹 Phase 4: Slack OAuth Integration & Live Alerting
-- [ ] **4.1 Slack OAuth Flow Initiation**: Create `GET /api/slack/authorize` to redirect user to Slack OAuth approval screen with required scopes.
-- [ ] **4.2 Slack OAuth Callback**: Create `GET /api/slack/callback` to exchange code for bot access token and incoming webhook URL.
-- [ ] **4.3 Slack Status & Disconnect**: Create `GET /api/slack/status` and `POST /api/slack/disconnect` endpoints for managing the connection.
-- [ ] **4.4 Real-Time Rate Limit Alert Dispatcher**: Trigger a formatted Slack message immediately when a sender hits the hourly limit.
-- [ ] **4.5 Graceful Fallback**: Ensure rate limit events log cleanly without crashing if the user has not connected Slack.
+- [x] **4.1 Slack OAuth Flow Initiation**: Create `GET /api/slack/authorize` to redirect user to Slack OAuth approval screen with required scopes.
+- [x] **4.2 Slack OAuth Callback**: Create `GET /api/slack/callback` to exchange code for bot access token and incoming webhook URL.
+- [x] **4.3 Slack Status & Disconnect**: Create `GET /api/slack/status` and `POST /api/slack/disconnect` endpoints for managing the connection.
+- [x] **4.4 Real-Time Rate Limit Alert Dispatcher**: Trigger a formatted Slack message immediately when a sender hits the hourly limit.
+- [x] **4.5 Graceful Fallback**: Ensure rate limit events log cleanly without crashing if the user has not connected Slack.
 
 ---
 

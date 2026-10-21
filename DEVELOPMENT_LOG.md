@@ -196,14 +196,111 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
 
 ---
 
+# 🔹 Phase 4: Slack OAuth Integration & Live Alerting
+
+### 1. What We Built & How We Proceeded
+- **Slack Service Architecture (4.1 & 4.2)**:
+  - Created [slack.service.ts](file:///e:/ReachInBox/backend/src/services/slack.service.ts) using `axios` with strict timeout controls (`timeout: 8000`).
+  - Implemented `SlackService.getAuthorizationUrl(userId)` generating the official Slack OAuth v2 approval URL with `incoming-webhook` and `chat:write` scopes.
+  - Implemented `SlackService.exchangeCodeForToken(code, userId)` making an `axios.post` to `https://slack.com/api/oauth.v2.access` with `Content-Type: application/x-www-form-urlencoded`.
+  - Persisted the resulting bot access token, team ID, channel name, and incoming webhook URL directly into Supabase via Prisma's `SlackIntegration` model.
+- **Connection Status & Disconnect Management (4.3)**:
+  - Implemented `SlackService.getStatus(userId)` reporting connection state, mode (`OAUTH` vs `GLOBAL_WEBHOOK` fallback), and active target channel.
+  - Implemented `SlackService.disconnect(userId)` allowing users to cleanly unlink their Slack channel without interrupting scheduling queues.
+- **Real-Time Rate Limit Alert Dispatcher (4.4)**:
+  - Formatted alert notifications using Slack Block Kit:
+    - ⚠️ **Header**: `ReachInbox Hourly Rate Limit Reached`
+    - **Sender field**: Sender email / ID.
+    - **Hourly Quota field**: `50 / 50 emails`.
+    - **Reschedule Policy**: Preserved in BullMQ queue.
+    - **Next Send Window**: Exact UTC time of the next hour window.
+    - **Context badge**: `🔒 Idempotent scheduler: Zero emails will be dropped or duplicated.`
+  - Dispatches instantly via `axios.post(webhookUrl, messagePayload)`.
+- **Graceful Fallback & Zero-Crash Architecture (4.5)**:
+  - If a user has not linked Slack or if the webhook fails, the alert dispatcher logs a clean informational notice (`ℹ️ [SlackAlert] User X has not connected Slack. Gracefully skipping Slack alert.`) and returns `false`. The email worker and queue continue running without disruption.
+- **Express API & Worker Hookup**:
+  - Created [slack.controller.ts](file:///e:/ReachInBox/backend/src/controllers/slack.controller.ts) and [slack.routes.ts](file:///e:/ReachInBox/backend/src/routes/slack.routes.ts) mounting:
+    - `GET /api/slack/authorize`: Redirects browser to Slack OAuth approval screen.
+    - `GET /api/slack/callback`: Handles OAuth redirect, saves integration, and returns user to dashboard.
+    - `GET /api/slack/status`: Active connection status.
+    - `POST /api/slack/disconnect`: Unlinks Slack integration.
+    - `POST /api/slack/test-alert`: Allows immediate test notification dispatch.
+  - Connected the dispatcher directly into [email.worker.ts](file:///e:/ReachInBox/backend/src/queues/email.worker.ts) so every rate limit cutoff automatically alerts Slack.
+
+---
+
+### 2. How Testing Was Conducted ([slack.test.ts](file:///e:/ReachInBox/backend/src/test/slack.test.ts))
+Authoring a dedicated integration test suite verifying every subtask:
+```typescript
+// Test Flow in backend/src/test/slack.test.ts:
+1. Validates Slack OAuth URL syntax and scopes (incoming-webhook, chat:write).
+2. Creates transient test User in PostgreSQL (Supabase).
+3. Tests Graceful Fallback: Calls sendRateLimitAlert without Slack connected; verifies clean return false with zero crashes.
+4. Spins up a transient local HTTP webhook receiver on 127.0.0.1:5055 to simulate Slack's webhook receiver.
+5. Persists mock integration into Prisma SlackIntegration.
+6. Queries getStatus; verifies connected: true and channel name matching.
+7. Calls sendRateLimitAlert; receives payload on mock server and validates full Block Kit JSON structure.
+8. Tests disconnect flow; verifies getStatus reverts to connected: false.
+9. Cleans up database and closes mock server.
+```
+
+**Actual Test Execution Output:**
+```text
+🧪 Starting Phase 4 (Slack OAuth & Live Alerting) Verification Suite...
+
+👉 [4.1] Testing Slack OAuth Authorization URL...
+   Generated Auth URL: https://slack.com/oauth/v2/authorize?client_id=&scope=incoming-webhook%2Cchat%3Awrite&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fapi%2Fslack%2Fcallback&state=phase4-user-1792554648681
+   ✅ Slack OAuth authorization URL properly formed with required scopes
+
+👉 [4.5] Testing Graceful Fallback (User has no Slack connected)...
+ℹ️ [SlackAlert] User phase4-user-1792554648681 has not connected Slack. Gracefully skipping Slack alert.
+   Fallback alert result: false
+   ✅ Graceful fallback verified: logged cleanly without exceptions or crashes
+
+👉 [4.2 & 4.3] Testing SlackIntegration DB Persistence, Status & Disconnect...
+   Mock Slack webhook receiver listening on http://127.0.0.1:5055
+   Retrieved Slack status: {
+  connected: true,
+  mode: 'OAUTH',
+  channelName: 'alerts-rate-limits',
+  connectedAt: '2026-10-21T03:50:49.544Z',
+  teamId: 'T12345678'
+}
+   ✅ Slack status correctly reflects active integration and target channel
+
+👉 [4.4] Testing Live Rate Limit Alert Dispatcher...
+📢 [SlackAlert] Real-time rate limit notification delivered to Slack successfully!
+   Alert dispatch result: true
+   Received Slack Block Kit payload: {
+  "text": "⚠️ Rate Limit Alert: Sender marketing@reachinbox.local reached hourly threshold",
+  "blocks": [...]
+}
+   ✅ Live formatted Slack Block Kit alert successfully received by webhook
+
+👉 Testing Disconnect Flow...
+   Disconnect result: { success: true }
+   Status after disconnect: { connected: false, mode: 'NONE', channelName: null }
+   ✅ Slack integration cleanly disconnected
+
+🧹 Cleaning up test user...
+
+🎉 ALL PHASE 4 SUBTASKS VERIFIED SUCCESSFULLY!
+```
+
+---
+
+### 3. Engineering Challenges & Solutions
+
+#### ⚠️ Challenge 1: Replacing Native `fetch` with `axios` Across the Stack
+- **Problem**: Native `fetch` does not have built-in timeout configurations and requires verbose `AbortController` boilerplate. If Slack's incoming webhook experienced packet drops or high API latency, worker threads could hang waiting for socket responses.
+- **Solution**: Added `axios` to the project (`npm install axios --workspace=backend`). Refactored `SlackService` to use `axios.post` with a strict `timeout: 8000` configuration and used `axios.isAxiosError(err)` for granular error inspection. This ensures worker threads are guaranteed to be unblocked within 8 seconds even under complete Slack network outages.
+
+---
+
 ## 🔹 Roadmap of Upcoming Phases (To Be Logged Sequentially)
 
-- **Phase 4: Slack OAuth Integration & Live Alerting**
-  - Slack OAuth routes (`/api/slack/authorize`, `/api/slack/callback`).
-  - Storing bot tokens & webhook channels in Supabase.
-  - Wire live rate limit events from `setRateLimitAlertHandler` to formatted Slack messages.
 - **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)**
-  - Dynamic Nodemailer transport per sender account.
+  - Dynamic Nodemailer transport per sender account with connection pooling.
   - Live capture and persistence of Ethereal preview URLs (`getTestMessageUrl`).
 - **Phase 6: Elasticsearch Indexing & Full-Text Search**
   - Sync pipeline between Prisma updates and Elasticsearch index `emails`.
