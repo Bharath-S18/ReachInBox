@@ -9,6 +9,9 @@ import { checkElasticsearchHealth } from './config/elasticsearch.js';
 import { ElasticsearchService } from './services/elasticsearch.service.js';
 import slackRouter from './routes/slack.routes.js';
 import emailRouter from './routes/email.routes.js';
+import authRouter from './routes/auth.routes.js';
+import senderRouter from './routes/sender.routes.js';
+import { setupBullBoard } from './config/bullBoard.js';
 
 dotenv.config();
 
@@ -18,7 +21,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Bull-Board Queue Monitoring Dashboard
+app.use('/admin/queues', setupBullBoard());
+
+// API Routes
+app.use('/api/auth', authRouter);
+app.use('/api/senders', senderRouter);
 app.use('/api/slack', slackRouter);
 app.use('/api/emails', emailRouter);
 
@@ -43,12 +51,13 @@ app.get('/health', async (req: Request, res: Response) => {
 });
 
 const server = app.listen(PORT, async () => {
-  console.log(`🚀 ReachInbox Scheduler Backend running on http://localhost:${PORT}`);
-  console.log(`📊 Health check available at http://localhost:${PORT}/health`);
+  console.log(`[INFO] ReachInbox Scheduler Backend running on http://localhost:${PORT}`);
+  console.log(`[INFO] Health check available at http://localhost:${PORT}/health`);
+  console.log(`[INFO] Bull-Board Queue Dashboard available at http://localhost:${PORT}/admin/queues`);
   
   const redisOk = await checkRedisHealth();
   if (redisOk) {
-    console.log('⚡ Redis & BullMQ Queue Engine active and ready for jobs');
+    console.log('[INFO] Redis and BullMQ Queue Engine active and ready for jobs');
   }
 
   // Attempt Elasticsearch initialization with non-blocking graceful fallback
@@ -57,17 +66,17 @@ const server = app.listen(PORT, async () => {
 
 // Graceful shutdown
 async function gracefulShutdown(signal: string) {
-  console.log(`\n🛑 Received ${signal}. Gracefully terminating BullMQ workers and Express server...`);
+  console.log(`\n[INFO] Received ${signal}. Gracefully terminating BullMQ workers and Express server...`);
   server.close(async () => {
     try {
       await emailWorker.close();
       await emailQueue.close();
       SmtpService.closeAllTransporters();
       await getRedisClient().quit();
-      console.log('✅ Clean shutdown completed.');
+      console.log('[SUCCESS] Clean shutdown completed.');
       process.exit(0);
     } catch (err) {
-      console.error('Error during shutdown:', err);
+      console.error('[ERROR] Error during shutdown:', err);
       process.exit(1);
     }
   });

@@ -1,10 +1,10 @@
-# 🚀 ReachInbox Full-Stack Email Job Scheduler – Master Implementation Plan
+# ReachInbox Full-Stack Email Job Scheduler – Master Implementation Plan
 
 This master plan details the architecture, design choices, and phase-by-phase execution roadmap to build a production-grade Email Scheduler & Dashboard from scratch according to all requirements.
 
 ---
 
-## 🏗 System Architecture
+## System Architecture
 
 ```mermaid
 graph TD
@@ -30,9 +30,9 @@ graph TD
 
 ---
 
-## 📋 Phase-Wise Implementation Roadmap
+## Phase-Wise Implementation Roadmap
 
-### 🔹 Phase 1: Project Scaffolding & Infrastructure
+### Phase 1: Project Scaffolding & Infrastructure
 - **Monorepo Structure**:
   - `backend/`: Node.js, Express.js, TypeScript, BullMQ, Prisma, Elasticsearch client, Nodemailer.
   - `frontend/`: React, TypeScript, Tailwind CSS, Lucide icons, Google OAuth (@react-oauth/google).
@@ -46,7 +46,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 2: Relational Database Schema & Prisma ORM Layer
+### Phase 2: Relational Database Schema & Prisma ORM Layer
 - **Data Models (`prisma/schema.prisma`)**:
   - `User`: Google profile (`id`, `email`, `name`, `avatar`, `createdAt`).
   - `SenderAccount`: Multi-sender support (`id`, `name`, `email`, `host`, `port`, `user`, `pass`, `hourlyLimit`).
@@ -62,7 +62,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
+### Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
 - **Queue & Worker Architecture**:
   - Dedicated `emailQueue` and `emailWorker` using BullMQ.
   - **Configurable Worker Concurrency**: Set via `WORKER_CONCURRENCY` (e.g., 5 or 10 concurrent jobs).
@@ -85,7 +85,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 4: Slack OAuth Integration & Live Alerting
+### Phase 4: Slack OAuth Integration & Live Alerting
 - **OAuth Flow**:
   - `/api/slack/authorize`: Initiates OAuth authorization flow with Slack (`incoming-webhook`, `chat:write`).
   - `/api/slack/callback`: Exchanges OAuth authorization code for webhook URL & bot token; stores to user's `SlackIntegration`.
@@ -94,14 +94,14 @@ graph TD
 - **Live Rate Limit Alert Dispatcher**:
   - Fires at the exact millisecond an hourly limit is breached.
   - Formatted Slack message includes:
-    - ⚠️ **Rate Limit Alert**: Sender reached hourly limit.
-    - 📊 **Current Count**: e.g., 50/50 emails sent.
-    - ⏳ **Rescheduled**: Remaining jobs deferred to next window.
+    - **Rate Limit Alert**: Sender reached hourly limit.
+    - **Current Count**: e.g., 50/50 emails sent.
+    - **Rescheduled**: Remaining jobs deferred to next window.
     - Graceful fallback: If Slack not connected, log event silently without crashing.
 
 ---
 
-### 🔹 Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
+### Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
 - **Multi-Sender Management**:
   - Ability to register multiple Ethereal sender accounts or auto-provision on boot.
   - Multi-sender cycling / campaign-specified sender assignment.
@@ -112,7 +112,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 6: Elasticsearch Indexing & Full-Text Search
+### Phase 6: Elasticsearch Indexing & Full-Text Search
 - **Elasticsearch Client Setup**:
   - Connects to Elasticsearch cluster.
   - Auto-creates index `emails` with appropriate analyzers (wildcard/ngram on recipient, subject, body).
@@ -125,7 +125,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 7: Bull-Board & Express API Endpoints
+### Phase 7: Bull-Board & Express API Endpoints
 - **Authentication & User Routes**:
   - `POST /api/auth/google`: Verifies Google ID Token (`google-auth-library`), returns JWT session.
   - `GET /api/auth/me`: Current user session and connected integrations.
@@ -142,7 +142,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 8: Frontend Dashboard (Figma-Matched UI)
+### Phase 8: Frontend Dashboard (Figma-Matched UI)
 - **Tech Stack & Design System**:
   - React (Vite / Next.js) with Tailwind CSS matching the provided Figma design.
   - Typography, clean micro-interactions, dark/light theme fidelity.
@@ -171,7 +171,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 9: Testing, Load Simulation & Resilience Verification
+### Phase 9: Testing, Load Simulation & Resilience Verification
 - **Persistence & Restart Verification**:
   - Schedule emails for future time.
   - Terminate backend process (`kill`).
@@ -187,7 +187,7 @@ graph TD
 
 ---
 
-### 🔹 Phase 10: Submission Kit & Documentation
+### Phase 10: Submission Kit & Documentation
 - **Comprehensive README.md**:
   - Quick start instructions (`docker compose up`, `npm install`, `npm run dev`).
   - Architecture breakdown and BullMQ persistent scheduling explanation.

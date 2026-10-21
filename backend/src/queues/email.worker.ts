@@ -46,8 +46,18 @@ export async function processEmailJob(
     where: { id: jobId },
   });
 
-  if (existingJob?.status === 'SENT') {
-    console.log(`[Worker] Job ${jobId} already marked as SENT. Skipping.`);
+  if (!existingJob) {
+    console.log(`[INFO] [Worker] Job ${jobId} does not exist in database. Skipping.`);
+    return {
+      success: false,
+      jobId,
+      recipientEmail,
+      status: 'SKIPPED',
+    };
+  }
+
+  if (existingJob.status === 'SENT') {
+    console.log(`[INFO] [Worker] Job ${jobId} already marked as SENT. Skipping.`);
     return {
       success: true,
       jobId,
@@ -62,7 +72,7 @@ export async function processEmailJob(
   if (!rateCheck.allowed) {
     const rescheduledAt = new Date(Date.now() + rateCheck.msUntilReset);
     console.warn(
-      `⚠️ [Worker] Sender ${senderId} hit hourly rate limit (${rateCheck.currentCount}/${effectiveLimit}). Rescheduling job ${jobId} to ${rescheduledAt.toISOString()}`
+      `[WARN] [Worker] Sender ${senderId} reached hourly rate limit (${rateCheck.currentCount}/${effectiveLimit}). Rescheduling job ${jobId} to ${rescheduledAt.toISOString()}`
     );
 
     // Update job status in PostgreSQL to RESCHEDULED
@@ -118,7 +128,7 @@ export async function processEmailJob(
 
   // 3. Inter-Email Throttling Delay
   if (effectiveDelay > 0) {
-    console.log(`⏱️ [Worker] Applying throttling delay: ${effectiveDelay}ms`);
+    console.log(`[INFO] [Worker] Applying throttling delay: ${effectiveDelay}ms`);
     await new Promise((resolve) => setTimeout(resolve, effectiveDelay));
   }
 
@@ -160,9 +170,9 @@ export async function processEmailJob(
       etherealMessageUrl: mailResult.previewUrl,
     }).catch(() => null);
 
-    console.log(`✅ [Worker] Successfully processed job ${jobId} to ${recipientEmail}`);
+    console.log(`[SUCCESS] [Worker] Successfully processed job ${jobId} to ${recipientEmail}`);
     if (mailResult.previewUrl) {
-      console.log(`🔗 [Worker] Ethereal Preview URL: ${mailResult.previewUrl}`);
+      console.log(`[INFO] [Worker] Ethereal Preview URL: ${mailResult.previewUrl}`);
     }
 
     return {
@@ -173,7 +183,7 @@ export async function processEmailJob(
       messageUrl: mailResult.previewUrl,
     };
   } catch (error: any) {
-    console.error(`❌ [Worker] Failed to deliver job ${jobId}:`, error.message);
+    console.error(`[ERROR] [Worker] Failed to deliver job ${jobId}:`, error.message);
 
     await prisma.emailJob.update({
       where: { id: jobId },
@@ -205,17 +215,17 @@ export const emailWorker = new Worker<EmailJobPayload, EmailJobResult>(
 );
 
 emailWorker.on('ready', () => {
-  console.log(`⚙️ BullMQ Email Worker ready with concurrency: ${concurrency}`);
+  console.log(`[INFO] BullMQ Email Worker initialized with concurrency: ${concurrency}`);
 });
 
 emailWorker.on('completed', (job, result) => {
-  console.log(`✨ Job ${job.id} completed with status: ${result.status}`);
+  console.log(`[INFO] Job ${job.id} completed with status: ${result.status}`);
 });
 
 emailWorker.on('failed', (job, err) => {
-  console.error(`💥 Job ${job?.id} failed:`, err.message);
+  console.error(`[ERROR] Job ${job?.id} failed:`, err.message);
 });
 
 emailWorker.on('error', (err) => {
-  console.error('💥 Worker internal error:', err.message);
+  console.error('[ERROR] Worker internal error:', err.message);
 });

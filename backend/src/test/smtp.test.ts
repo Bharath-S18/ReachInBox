@@ -5,7 +5,7 @@ import { emailWorker } from '../queues/email.worker.js';
 import { checkRedisHealth, getRedisClient } from '../config/redis.js';
 
 async function runSmtpVerificationSuite() {
-  console.log('🧪 Starting Phase 5 (Multi-Sender SMTP Dispatcher & Ethereal) Verification Suite...\n');
+  console.log(' Starting Phase 5 (Multi-Sender SMTP Dispatcher & Ethereal) Verification Suite...\n');
 
   // Verify Redis connectivity first
   const redisHealthy = await checkRedisHealth();
@@ -20,7 +20,7 @@ async function runSmtpVerificationSuite() {
 
   try {
     // 0. Setup test user
-    console.log('👉 [Setup] Creating transient test User...');
+    console.log(' [Setup] Creating transient test User...');
     const user = await prisma.user.create({
       data: {
         id: testUserId,
@@ -33,22 +33,22 @@ async function runSmtpVerificationSuite() {
     // =========================================================================
     // 5.1 Nodemailer Transporter & Ethereal Auto-Provisioning
     // =========================================================================
-    console.log('👉 [5.1] Testing Nodemailer Transporter with Real Ethereal SMTP Provisioning...');
+    console.log(' [5.1] Testing Nodemailer Transporter with Real Ethereal SMTP Provisioning...');
     sender1 = await SmtpService.provisionEtherealAccount(user.id, 'Ethereal Test Sender Alpha');
-    console.log(`   ✅ Sender 1 provisioned on Ethereal: ${sender1.email} (Host: ${sender1.host}:${sender1.port})`);
+    console.log(`    Sender 1 provisioned on Ethereal: ${sender1.email} (Host: ${sender1.host}:${sender1.port})`);
 
     const isSender1Healthy = await SmtpService.verifySenderConnection(sender1.id);
     if (!isSender1Healthy) {
       throw new Error('SMTP connection verification failed for Sender 1');
     }
-    console.log('   ✅ Sender 1 SMTP connection verified with active connection pool\n');
+    console.log('    Sender 1 SMTP connection verified with active connection pool\n');
 
     // =========================================================================
     // 5.2 Multi-Sender Rotation
     // =========================================================================
-    console.log('👉 [5.2] Testing Multi-Sender Rotation & Recipient Distribution...');
+    console.log(' [5.2] Testing Multi-Sender Rotation & Recipient Distribution...');
     sender2 = await SmtpService.provisionEtherealAccount(user.id, 'Ethereal Test Sender Beta');
-    console.log(`   ✅ Sender 2 provisioned on Ethereal: ${sender2.email}`);
+    console.log(`    Sender 2 provisioned on Ethereal: ${sender2.email}`);
 
     // Test Round-Robin User Selection
     const firstSelected = await SmtpService.getNextSenderForUser(user.id);
@@ -59,7 +59,7 @@ async function runSmtpVerificationSuite() {
     if (firstSelected.id === secondSelected.id || firstSelected.id !== thirdSelected.id) {
       throw new Error('Round-robin rotation did not cycle sender accounts alternately.');
     }
-    console.log('   ✅ Multi-sender user round-robin selection verified');
+    console.log('    Multi-sender user round-robin selection verified');
 
     // Test Batch Distribution
     const leads = ['leadA@test.com', 'leadB@test.com', 'leadC@test.com', 'leadD@test.com'];
@@ -77,12 +77,12 @@ async function runSmtpVerificationSuite() {
     ) {
       throw new Error('Batch recipient distribution did not alternate senders correctly.');
     }
-    console.log('   ✅ Multi-sender batch lead distribution verified\n');
+    console.log('    Multi-sender batch lead distribution verified\n');
 
     // =========================================================================
     // 5.3 Direct SMTP Dispatch & Ethereal Test Message URL Capture
     // =========================================================================
-    console.log('👉 [5.3] Testing Direct SMTP Send & Ethereal Message URL Capture...');
+    console.log(' [5.3] Testing Direct SMTP Send & Ethereal Message URL Capture...');
     const directResult = await SmtpService.sendMailWithSender({
       senderId: sender1.id,
       to: 'recipient-direct@example.com',
@@ -96,12 +96,12 @@ async function runSmtpVerificationSuite() {
     if (!directResult.previewUrl || !directResult.previewUrl.includes('ethereal.email')) {
       throw new Error(`Invalid or missing Ethereal preview URL: ${directResult.previewUrl}`);
     }
-    console.log('   ✅ Direct Ethereal SMTP dispatch succeeded and preview URL captured\n');
+    console.log('    Direct Ethereal SMTP dispatch succeeded and preview URL captured\n');
 
     // =========================================================================
     // 5.3 (Worker Integration) Full BullMQ Worker End-to-End Processing
     // =========================================================================
-    console.log('👉 [5.3 Worker Integration] Testing BullMQ Worker End-to-End Processing...');
+    console.log(' [5.3 Worker Integration] Testing BullMQ Worker End-to-End Processing...');
     const queueJobId = `phase5-queue-job-${Date.now()}`;
 
     // Create EmailJob record in PostgreSQL
@@ -160,12 +160,12 @@ async function runSmtpVerificationSuite() {
     if (!processedJob.etherealMessageUrl || !processedJob.etherealMessageUrl.includes('ethereal.email')) {
       throw new Error('Ethereal preview URL was not stored in EmailJob record.');
     }
-    console.log('   ✅ End-to-end BullMQ worker execution verified with database persistence\n');
+    console.log('    End-to-end BullMQ worker execution verified with database persistence\n');
 
     // =========================================================================
     // 5.4 Delivery Error Handling
     // =========================================================================
-    console.log('👉 [5.4] Testing Delivery Error Handling & Failure Logging...');
+    console.log(' [5.4] Testing Delivery Error Handling & Failure Logging...');
     faultySender = await prisma.senderAccount.create({
       data: {
         userId: user.id,
@@ -230,11 +230,11 @@ async function runSmtpVerificationSuite() {
     if (!failedJobRecord?.errorMessage) {
       throw new Error('Error message was not captured in EmailJob record.');
     }
-    console.log('   ✅ Delivery error captured and logged cleanly to database without crashing\n');
+    console.log('    Delivery error captured and logged cleanly to database without crashing\n');
 
   } finally {
     // Teardown
-    console.log('🧹 Cleaning up test records and shutting down connections...');
+    console.log(' Cleaning up test records and shutting down connections...');
     try {
       await prisma.emailJob.deleteMany({
         where: { userId: testUserId },
@@ -256,12 +256,12 @@ async function runSmtpVerificationSuite() {
     }
   }
 
-  console.log('🎉 ALL PHASE 5 SUBTASKS VERIFIED SUCCESSFULLY!\n');
+  console.log(' ALL PHASE 5 SUBTASKS VERIFIED SUCCESSFULLY!\n');
 }
 
 runSmtpVerificationSuite()
   .then(() => process.exit(0))
   .catch((err) => {
-    console.error('❌ Phase 5 Verification Failed:', err);
+    console.error(' Phase 5 Verification Failed:', err);
     process.exit(1);
   });

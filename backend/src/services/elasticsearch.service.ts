@@ -76,7 +76,7 @@ export class ElasticsearchService {
   public static async initIndex(indexName: string = EMAILS_INDEX_NAME): Promise<boolean> {
     const health = await checkElasticsearchHealth(this.client);
     if (!health.healthy) {
-      console.warn(`ℹ️ [Elasticsearch] Cluster offline at ${health.node}. Graceful fallback mode will be active.`);
+      console.warn(`[INFO] [Elasticsearch] Cluster offline at ${health.node}. Graceful fallback mode will be active.`);
       return false;
     }
 
@@ -108,13 +108,13 @@ export class ElasticsearchService {
             },
           },
         });
-        console.log(`✅ [Elasticsearch] Index '${indexName}' initialized with search mappings.`);
+        console.log(`[INFO] [Elasticsearch] Index '${indexName}' initialized with search mappings.`);
       }
 
       this.isIndexInitialized = true;
       return true;
     } catch (error: any) {
-      console.warn(`⚠️ [Elasticsearch] Failed to initialize index '${indexName}':`, error.message);
+      console.warn(`[WARN] [Elasticsearch] Failed to initialize index '${indexName}':`, error.message);
       return false;
     }
   }
@@ -147,7 +147,7 @@ export class ElasticsearchService {
 
       return true;
     } catch (error: any) {
-      console.warn(`⚠️ [Elasticsearch] Failed to index job ${job.jobId}:`, error.message);
+      console.warn(`[WARN] [Elasticsearch] Failed to index job ${job.jobId}:`, error.message);
       return false;
     }
   }
@@ -195,7 +195,7 @@ export class ElasticsearchService {
 
       return true;
     } catch (error: any) {
-      console.warn(`⚠️ [Elasticsearch] Failed to update job ${jobId} status in index:`, error.message);
+      console.warn(`[WARN] [Elasticsearch] Failed to update job ${jobId} status in index:`, error.message);
       return false;
     }
   }
@@ -223,7 +223,7 @@ export class ElasticsearchService {
     } catch (error: any) {
       // 404 is acceptable when document doesn't exist
       if (error.meta?.statusCode !== 404) {
-        console.warn(`⚠️ [Elasticsearch] Failed to delete job ${jobId} from index:`, error.message);
+        console.warn(`[WARN] [Elasticsearch] Failed to delete job ${jobId} from index:`, error.message);
       }
       return false;
     }
@@ -306,7 +306,7 @@ export class ElasticsearchService {
         };
       } catch (esError: any) {
         console.warn(
-          `⚠️ [Elasticsearch] Search query failed, falling back to database:`,
+          `[WARN] [Elasticsearch] Search query failed, falling back to database:`,
           esError.message
         );
       }

@@ -1,10 +1,10 @@
-# 🛠️ ReachInbox Scheduler – Engineering & Development Journal
+# ReachInbox Scheduler – Engineering & Development Journal
 
 This journal serves as the single source of truth for **how** each phase and subtask was planned, built, tested, and debugged. It candidly captures technical architecture decisions, concrete test suites used for verification, the real-world engineering hurdles encountered along the way, and how they were resolved.
 
 ---
 
-## 📌 Document Structure
+## Document Structure
 For every phase, we document:
 1. **What We Built & How We Proceeded**: Granular breakdown of implementation decisions, file changes, and data flow.
 2. **How Testing Was Conducted**: The exact scripts, test harnesses, edge cases, and logs used to validate functionality.
@@ -13,7 +13,7 @@ For every phase, we document:
 
 ---
 
-# 🔹 Phase 1: Project Scaffolding & Infrastructure
+# Phase 1: Project Scaffolding & Infrastructure
 
 ### 1. What We Built & How We Proceeded
 - **Monorepo Setup (1.1)**: Configured a unified root [package.json](file:///e:/ReachInBox/package.json) using npm workspaces (`backend`, `frontend`) and `concurrently` to orchestrate parallel backend and frontend development scripts (`npm run dev`, `npm run build`).
@@ -43,7 +43,7 @@ For every phase, we document:
 
 ---
 
-# 🔹 Phase 2: Relational Database Schema & Prisma ORM Layer
+# Phase 2: Relational Database Schema & Prisma ORM Layer
 
 ### 1. What We Built & How We Proceeded
 - **Prisma Setup (2.1)**: Integrated `@prisma/client` and initialized Prisma with PostgreSQL pointing to a hosted Supabase database instance.
@@ -64,7 +64,7 @@ For every phase, we document:
 
 ---
 
-# 🔹 Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
+# Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
 
 ### 1. What We Built & How We Proceeded
 - **Queue Initialization (3.1)**:
@@ -116,49 +116,49 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
 
 **Actual Test Execution Output:**
 ```text
-🧪 Starting Phase 3 (BullMQ & Rate Limiting) Verification Suite...
+ Starting Phase 3 (BullMQ & Rate Limiting) Verification Suite...
 
-👉 [3.1] Testing Redis & Queue Initialization...
-🔌 Connected to Redis successfully
-⚙️ BullMQ Email Worker ready with concurrency: 5
-   ✅ Redis ping: OK
-   ✅ BullMQ Queue instantiated.
+ [3.1] Testing Redis & Queue Initialization...
+ Connected to Redis successfully
+ BullMQ Email Worker ready with concurrency: 5
+    Redis ping: OK
+    BullMQ Queue instantiated.
 
-👉 [3.4] Testing Redis-backed Hourly Rate Limiting...
+ [3.4] Testing Redis-backed Hourly Rate Limiting...
    Initial check: allowed=true, count=0
    After 3 sends: count=3, allowed=true
    4th check (exceeding limit): allowed=false, count=3
-   ✅ Redis rate limiter successfully enforced hourly boundary and counted atomically
+    Redis rate limiter successfully enforced hourly boundary and counted atomically
 
-👉 [3.2, 3.3, 3.5, 3.6] Testing End-to-End Worker Processing & Idempotency...
+ [3.2, 3.3, 3.5, 3.6] Testing End-to-End Worker Processing & Idempotency...
    Enqueuing Job 1 (under limit)...
 [Worker] Processing Job phase3-job-1 for recipient: lead1@test.local
-⏱️ [Worker] Applying throttling delay: 200ms
-✅ [Worker] Successfully processed job phase3-job-1 to lead1@test.local
-✨ Job phase3-job-1 completed with status: SENT
+[Worker] Applying throttling delay: 200ms
+ [Worker] Successfully processed job phase3-job-1 to lead1@test.local
+ Job phase3-job-1 completed with status: SENT
    Job 1 DB Status: SENT
-   ✅ Job 1 completed and marked SENT in database
+    Job 1 completed and marked SENT in database
    Testing Idempotency: re-enqueuing Job 1...
 [Worker] Job phase3-job-1 already marked as SENT. Skipping.
-✨ Job phase3-job-1-retry completed with status: SKIPPED
-   ✅ Idempotency verified: duplicate job skipped cleanly
+ Job phase3-job-1-retry completed with status: SKIPPED
+    Idempotency verified: duplicate job skipped cleanly
    Enqueuing Job 2 (exceeding limit of 1/hr)...
-⚠️ [Worker] Sender phase3-test-sender hit hourly rate limit (1/1). Rescheduling job to next hour window
-   📢 [Alert Hook] Live Rate Limit Alert received: sender=phase3-test-sender, count=1/1
+ [Worker] Sender phase3-test-sender hit hourly rate limit (1/1). Rescheduling job to next hour window
+    [Alert Hook] Live Rate Limit Alert received: sender=phase3-test-sender, count=1/1
    Job 2 DB Status: RESCHEDULED
-   ✅ Job 2 successfully moved to delayed state with status RESCHEDULED
-   ✅ Live Alert handler triggered for Phase 4 Slack integration
+    Job 2 successfully moved to delayed state with status RESCHEDULED
+    Live Alert handler triggered for Phase 4 Slack integration
 
-🧹 Cleaning up test records...
+ Cleaning up test records...
 
-🎉 ALL PHASE 3 SUBTASKS VERIFIED SUCCESSFULLY!
+ ALL PHASE 3 SUBTASKS VERIFIED SUCCESSFULLY!
 ```
 
 ---
 
 ### 3. Engineering Challenges & Solutions
 
-#### ⚠️ Challenge 1: Windows Host vs. WSL2 Redis Networking Isolation
+#### Challenge 1: Windows Host vs. WSL2 Redis Networking Isolation
 - **Problem**: Docker was unavailable on the Windows host machine. We installed `redis-server` in Ubuntu WSL2, but Windows Node.js connections to `localhost:6379` threw `ECONNREFUSED`. Connecting directly to the WSL virtual IP (`172.29.51.8`) was blocked by the Windows Hyper-V firewall (`vEthernet WSL`).
 - **Diagnosis**: WSL2 runs inside a virtual NAT switch. Windows automatic port forwarding only functions under specific conditions or with elevated firewall rules.
 - **Solution**: We searched WinGet for non-admin, native Windows Redis distributions and discovered `taizod1024.redis-windows-fork` (version 8.10.2), which is an official MSYS2-compiled portable Redis package. Installed via WinGet and launched directly as a background Windows daemon:
@@ -167,7 +167,7 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
   ```
   Result: Instant, native port 6379 access without virtualization overhead or firewall conflicts.
 
-#### ⚠️ Challenge 2: Node.js IPv6 Resolution vs. Redis IPv4 Loopback
+#### Challenge 2: Node.js IPv6 Resolution vs. Redis IPv4 Loopback
 - **Problem**: When configuring `ioredis` with `host: 'localhost'`, Node.js v24 resolved `localhost` to IPv6 `::1` first. Since Redis was bound to IPv4 `127.0.0.1`, `ioredis` crashed with repeated `ECONNREFUSED 127.0.0.1:6379` connection retries.
 - **Solution**: Updated `backend/src/config/redis.ts` to strictly sanitize the host:
   ```typescript
@@ -175,14 +175,14 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
   ```
   Additionally sanitized `REDIS_PASSWORD` so empty string `""` values are coerced to `undefined`, preventing unneeded Redis AUTH commands.
 
-#### ⚠️ Challenge 3: BullMQ `moveToDelayed` Missing Lock Warning
+#### Challenge 3: BullMQ `moveToDelayed` Missing Lock Warning
 - **Problem**: When rescheduling a job that exceeded the hourly rate limit, the worker processor executed:
   ```typescript
   await job.moveToDelayed(Date.now() + msUntilReset, job.token);
   return { status: 'RESCHEDULED' };
   ```
   This produced a runtime warning:
-  `💥 Worker internal error: Missing lock for job ... moveToFinished`.
+  ` Worker internal error: Missing lock for job ... moveToFinished`.
 - **Diagnosis**: In BullMQ, when a worker processor resolves its Promise, BullMQ internally attempts to call `moveToFinished`. Because `moveToDelayed` had already surrendered the job's active lock, the worker threw an internal error trying to finish an already-delayed job.
 - **Solution**: Leveraged BullMQ's official `DelayedError` primitive:
   ```typescript
@@ -196,7 +196,7 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
 
 ---
 
-# 🔹 Phase 4: Slack OAuth Integration & Live Alerting
+# Phase 4: Slack OAuth Integration & Live Alerting
 
 ### 1. What We Built & How We Proceeded
 - **Slack Service Architecture (4.1 & 4.2)**:
@@ -209,15 +209,15 @@ Rather than relying on manual guesses, we authored a dedicated end-to-end integr
   - Implemented `SlackService.disconnect(userId)` allowing users to cleanly unlink their Slack channel without interrupting scheduling queues.
 - **Real-Time Rate Limit Alert Dispatcher (4.4)**:
   - Formatted alert notifications using Slack Block Kit:
-    - ⚠️ **Header**: `ReachInbox Hourly Rate Limit Reached`
+    -  **Header**: `ReachInbox Hourly Rate Limit Reached`
     - **Sender field**: Sender email / ID.
     - **Hourly Quota field**: `50 / 50 emails`.
     - **Reschedule Policy**: Preserved in BullMQ queue.
     - **Next Send Window**: Exact UTC time of the next hour window.
-    - **Context badge**: `🔒 Idempotent scheduler: Zero emails will be dropped or duplicated.`
+    - **Context badge**: ` Idempotent scheduler: Zero emails will be dropped or duplicated.`
   - Dispatches instantly via `axios.post(webhookUrl, messagePayload)`.
 - **Graceful Fallback & Zero-Crash Architecture (4.5)**:
-  - If a user has not linked Slack or if the webhook fails, the alert dispatcher logs a clean informational notice (`ℹ️ [SlackAlert] User X has not connected Slack. Gracefully skipping Slack alert.`) and returns `false`. The email worker and queue continue running without disruption.
+  - If a user has not linked Slack or if the webhook fails, the alert dispatcher logs a clean informational notice (`[INFO] [SlackAlert] User X has not connected Slack. Gracefully skipping Slack alert.`) and returns `false`. The email worker and queue continue running without disruption.
 - **Express API & Worker Hookup**:
   - Created [slack.controller.ts](file:///e:/ReachInBox/backend/src/controllers/slack.controller.ts) and [slack.routes.ts](file:///e:/ReachInBox/backend/src/routes/slack.routes.ts) mounting:
     - `GET /api/slack/authorize`: Redirects browser to Slack OAuth approval screen.
@@ -246,18 +246,18 @@ Authoring a dedicated integration test suite verifying every subtask:
 
 **Actual Test Execution Output:**
 ```text
-🧪 Starting Phase 4 (Slack OAuth & Live Alerting) Verification Suite...
+ Starting Phase 4 (Slack OAuth & Live Alerting) Verification Suite...
 
-👉 [4.1] Testing Slack OAuth Authorization URL...
+ [4.1] Testing Slack OAuth Authorization URL...
    Generated Auth URL: https://slack.com/oauth/v2/authorize?client_id=&scope=incoming-webhook%2Cchat%3Awrite&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fapi%2Fslack%2Fcallback&state=phase4-user-1792554648681
-   ✅ Slack OAuth authorization URL properly formed with required scopes
+    Slack OAuth authorization URL properly formed with required scopes
 
-👉 [4.5] Testing Graceful Fallback (User has no Slack connected)...
-ℹ️ [SlackAlert] User phase4-user-1792554648681 has not connected Slack. Gracefully skipping Slack alert.
+ [4.5] Testing Graceful Fallback (User has no Slack connected)...
+[INFO] [SlackAlert] User phase4-user-1792554648681 has not connected Slack. Gracefully skipping Slack alert.
    Fallback alert result: false
-   ✅ Graceful fallback verified: logged cleanly without exceptions or crashes
+    Graceful fallback verified: logged cleanly without exceptions or crashes
 
-👉 [4.2 & 4.3] Testing SlackIntegration DB Persistence, Status & Disconnect...
+ [4.2 & 4.3] Testing SlackIntegration DB Persistence, Status & Disconnect...
    Mock Slack webhook receiver listening on http://127.0.0.1:5055
    Retrieved Slack status: {
   connected: true,
@@ -266,32 +266,32 @@ Authoring a dedicated integration test suite verifying every subtask:
   connectedAt: '2026-10-21T03:50:49.544Z',
   teamId: 'T12345678'
 }
-   ✅ Slack status correctly reflects active integration and target channel
+    Slack status correctly reflects active integration and target channel
 
-👉 [4.4] Testing Live Rate Limit Alert Dispatcher...
-📢 [SlackAlert] Real-time rate limit notification delivered to Slack successfully!
+ [4.4] Testing Live Rate Limit Alert Dispatcher...
+ [SlackAlert] Real-time rate limit notification delivered to Slack successfully!
    Alert dispatch result: true
    Received Slack Block Kit payload: {
-  "text": "⚠️ Rate Limit Alert: Sender marketing@reachinbox.local reached hourly threshold",
+  "text": " Rate Limit Alert: Sender marketing@reachinbox.local reached hourly threshold",
   "blocks": [...]
 }
-   ✅ Live formatted Slack Block Kit alert successfully received by webhook
+    Live formatted Slack Block Kit alert successfully received by webhook
 
-👉 Testing Disconnect Flow...
+ Testing Disconnect Flow...
    Disconnect result: { success: true }
    Status after disconnect: { connected: false, mode: 'NONE', channelName: null }
-   ✅ Slack integration cleanly disconnected
+    Slack integration cleanly disconnected
 
-🧹 Cleaning up test user...
+ Cleaning up test user...
 
-🎉 ALL PHASE 4 SUBTASKS VERIFIED SUCCESSFULLY!
+ ALL PHASE 4 SUBTASKS VERIFIED SUCCESSFULLY!
 ```
 
 ---
 
 ### 3. Engineering Challenges & Solutions
 
-#### ⚠️ Challenge 1: Replacing Native `fetch` with `axios` Across the Stack
+#### Challenge 1: Replacing Native `fetch` with `axios` Across the Stack
 - **Problem**: Native `fetch` does not have built-in timeout configurations and requires verbose `AbortController` boilerplate. If Slack's incoming webhook experienced packet drops or high API latency, worker threads could hang waiting for socket responses.
 - **Solution**: Added `axios` to the project (`npm install axios --workspace=backend`). Refactored `SlackService` to use `axios.post` with a strict `timeout: 8000` configuration and used `axios.isAxiosError(err)` for granular error inspection. This ensures worker threads are guaranteed to be unblocked within 8 seconds even under complete Slack network outages.
 
@@ -299,7 +299,7 @@ Authoring a dedicated integration test suite verifying every subtask:
 
 ---
 
-# 🔹 Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
+# Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)
 
 ### 1. What We Built & How We Proceeded
 - **Nodemailer Transporter Service (5.1)**:
@@ -334,67 +334,67 @@ Authoring a dedicated end-to-end integration test suite verifying every subtask:
 
 **Actual Test Execution Output:**
 ```text
-🧪 Starting Phase 5 (Multi-Sender SMTP Dispatcher & Ethereal) Verification Suite...
+ Starting Phase 5 (Multi-Sender SMTP Dispatcher & Ethereal) Verification Suite...
 
-🔌 Connected to Redis successfully
-⚙️ BullMQ Email Worker ready with concurrency: 5
-👉 [Setup] Creating transient test User...
+ Connected to Redis successfully
+ BullMQ Email Worker ready with concurrency: 5
+ [Setup] Creating transient test User...
    User created: phase5-test-user-1792559292151 (tester-1792559292152@reachinbox.local)
 
-👉 [5.1] Testing Nodemailer Transporter with Real Ethereal SMTP Provisioning...
-   ✅ Sender 1 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email (Host: smtp.ethereal.email:587)
-   ✅ Sender 1 SMTP connection verified with active connection pool
+ [5.1] Testing Nodemailer Transporter with Real Ethereal SMTP Provisioning...
+    Sender 1 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email (Host: smtp.ethereal.email:587)
+    Sender 1 SMTP connection verified with active connection pool
 
-👉 [5.2] Testing Multi-Sender Rotation & Recipient Distribution...
-   ✅ Sender 2 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email
+ [5.2] Testing Multi-Sender Rotation & Recipient Distribution...
+    Sender 2 provisioned on Ethereal: gteoqtja3hglpbrm@ethereal.email
    Round-Robin Sequence: [1] Ethereal Test Sender Alpha -> [2] Ethereal Test Sender Beta -> [3] Ethereal Test Sender Alpha
-   ✅ Multi-sender user round-robin selection verified
+    Multi-sender user round-robin selection verified
    Recipient batch distribution:
      Lead 1 (leadA@test.com) -> Sender: Ethereal Test Sender Alpha
      Lead 2 (leadB@test.com) -> Sender: Ethereal Test Sender Beta
      Lead 3 (leadC@test.com) -> Sender: Ethereal Test Sender Alpha
      Lead 4 (leadD@test.com) -> Sender: Ethereal Test Sender Beta
-   ✅ Multi-sender batch lead distribution verified
+    Multi-sender batch lead distribution verified
 
-👉 [5.3] Testing Direct SMTP Send & Ethereal Message URL Capture...
+ [5.3] Testing Direct SMTP Send & Ethereal Message URL Capture...
    Message ID: <33844e10-83e2-7333-ce47-6f9f495d5d06@ethereal.email>
    Ethereal Preview URL: https://ethereal.email/message/athIvD.z5CbOhXHtathIwrJrKujo-Tk6AAAAAT2FATb5aUzAOgWNieXNCRg
-   ✅ Direct Ethereal SMTP dispatch succeeded and preview URL captured
+    Direct Ethereal SMTP dispatch succeeded and preview URL captured
 
-👉 [5.3 Worker Integration] Testing BullMQ Worker End-to-End Processing...
+ [5.3 Worker Integration] Testing BullMQ Worker End-to-End Processing...
    Created DB EmailJob phase5-queue-job-1792559299166 with status PENDING
    Enqueued job into BullMQ. Waiting for worker to process...
 [Worker] Processing Job idemp-phase5-1792559299166 for recipient: queue-lead@example.com
-⏱️ [Worker] Applying throttling delay: 100ms
-✅ [Worker] Successfully processed job phase5-queue-job-1792559299166 to queue-lead@example.com
-🔗 [Worker] Ethereal Preview URL: https://ethereal.email/message/athIvD.z5CbOhXHtathIx50L.yTpB5Z2AAAAAnBMWi8Nh7LKyVWCZmakfYQ
-✨ Job idemp-phase5-1792559299166 completed with status: SENT
+[Worker] Applying throttling delay: 100ms
+ [Worker] Successfully processed job phase5-queue-job-1792559299166 to queue-lead@example.com
+ [Worker] Ethereal Preview URL: https://ethereal.email/message/athIvD.z5CbOhXHtathIx50L.yTpB5Z2AAAAAnBMWi8Nh7LKyVWCZmakfYQ
+ Job idemp-phase5-1792559299166 completed with status: SENT
    Final DB Status: SENT
    Sent At: 2026-10-21T05:08:24.301Z
    Ethereal Message URL in DB: https://ethereal.email/message/athIvD.z5CbOhXHtathIx50L.yTpB5Z2AAAAAnBMWi8Nh7LKyVWCZmakfYQ
-   ✅ End-to-end BullMQ worker execution verified with database persistence
+    End-to-end BullMQ worker execution verified with database persistence
 
-👉 [5.4] Testing Delivery Error Handling & Failure Logging...
+ [5.4] Testing Delivery Error Handling & Failure Logging...
 [Worker] Processing Job idemp-failed-1792559304720 for recipient: broken-lead@example.com
-❌ [Worker] Failed to deliver job phase5-failed-job-1792559304603: Invalid login: 535 Authentication failed
-💥 Job idemp-failed-1792559304720 failed: Invalid login: 535 Authentication failed
+ [Worker] Failed to deliver job phase5-failed-job-1792559304603: Invalid login: 535 Authentication failed
+ Job idemp-failed-1792559304720 failed: Invalid login: 535 Authentication failed
    Faulty Job DB Status: FAILED
    Captured Error Message: Invalid login: 535 Authentication failed
-   ✅ Delivery error captured and logged cleanly to database without crashing
+    Delivery error captured and logged cleanly to database without crashing
 
-🧹 Cleaning up test records and shutting down connections...
-🎉 ALL PHASE 5 SUBTASKS VERIFIED SUCCESSFULLY!
+ Cleaning up test records and shutting down connections...
+ ALL PHASE 5 SUBTASKS VERIFIED SUCCESSFULLY!
 ```
 
 ---
 
 ### 3. Engineering Challenges & Solutions
 
-#### ⚠️ Challenge 1: Transporter Connection Pool Lifecycles & Authentication Failures
+#### Challenge 1: Transporter Connection Pool Lifecycles & Authentication Failures
 - **Problem**: When a sender account's password was changed or corrupted, pooled connections in Nodemailer remained connected in the idle pool and continued throwing connection errors on subsequent jobs.
 - **Solution**: Implemented an explicit `invalidateTransporter(senderId)` cache clearing method. In `sendMailWithSender`, if `error.code === 'EAUTH'` or `error.responseCode === 535`, the cache automatically closes and evicts the faulty transporter pool. When valid credentials are later supplied, a clean new pool is established without restarting the service.
 
-#### ⚠️ Challenge 2: Background Windows Redis Daemon Management
+#### Challenge 2: Background Windows Redis Daemon Management
 - **Problem**: Between IDE sessions or terminal reboots, the portable Windows Redis daemon process (`redis-server.exe`) was not running, resulting in `ECONNREFUSED 127.0.0.1:6379` errors when starting queue workers.
 - **Solution**: Validated presence of `redis-server.exe` on Windows PATH (installed via `taizod1024.redis-windows-fork`), added health-check diagnostics in test harnesses, and launched Redis as a persistent background daemon.
 
@@ -402,7 +402,7 @@ Authoring a dedicated end-to-end integration test suite verifying every subtask:
 
 ---
 
-# 🔹 Phase 6: Elasticsearch Indexing & Full-Text Search
+# Phase 6: Elasticsearch Indexing & Full-Text Search
 
 ### 1. What We Built & How We Proceeded
 - **Elasticsearch Client Configuration & Health Check (6.1)**:
@@ -460,73 +460,149 @@ Authoring a dedicated end-to-end integration test suite verifying every subtask:
 
 **Actual Test Execution Output:**
 ```text
-🧪 Starting Phase 6 (Elasticsearch Indexing & Full-Text Search) Verification Suite...
+ Starting Phase 6 (Elasticsearch Indexing & Full-Text Search) Verification Suite...
 
-👉 [6.1] Testing Elasticsearch Client Health Check (Offline Graceful Fallback)...
+ [6.1] Testing Elasticsearch Client Health Check (Offline Graceful Fallback)...
    Default Node Health: {
   healthy: false,
   node: 'http://localhost:9200',
   error: 'Elasticsearch cluster unreachable'
 }
-   ✅ Offline state cleanly handled without unhandled exceptions
+    Offline state cleanly handled without unhandled exceptions
 
-👉 [6.2 & 6.3] Testing Active Elasticsearch Pipeline with Transient Cluster...
+ [6.2 & 6.3] Testing Active Elasticsearch Pipeline with Transient Cluster...
    Mock Elasticsearch server running on http://127.0.0.1:9205
    Cluster health: healthy=true, clusterName=test-es-cluster
-   ✅ Cluster health check verified
-✅ [Elasticsearch] Index 'test-emails' initialized with search mappings.
-   ✅ Index test-emails created with schema mappings
-   ✅ Document indexed in real time into Elasticsearch
-   ✅ Real-time status update to SENT verified in Elasticsearch index
+    Cluster health check verified
+ [Elasticsearch] Index 'test-emails' initialized with search mappings.
+    Index test-emails created with schema mappings
+    Document indexed in real time into Elasticsearch
+    Real-time status update to SENT verified in Elasticsearch index
    Search results via ES: total=1, source=ELASTICSEARCH
-   ✅ Elasticsearch multi-field search execution verified
+    Elasticsearch multi-field search execution verified
 
-👉 [6.3 & 6.4] Testing Graceful Fallback with PostgreSQL Full-Text Search...
+ [6.3 & 6.4] Testing Graceful Fallback with PostgreSQL Full-Text Search...
    Seeded 3 diverse test jobs in PostgreSQL database
    Search 'investment' -> Total: 1, Source: DATABASE_FALLBACK
-   ✅ Subject query verified via database fallback
+    Subject query verified via database fallback
    Search 'cloudinfra.io' -> Total: 1
-   ✅ Recipient email query verified via database fallback
+    Recipient email query verified via database fallback
    Search 'BullMQ' -> Total: 1
-   ✅ Body text query verified via database fallback
+    Body text query verified via database fallback
    Status filter 'SENT' -> Total: 1
-   ✅ Status filtering verified
+    Status filtering verified
    Pagination limit=2 -> Total: 3, Page Items: 2, TotalPages: 2
-   ✅ Pagination verified
+    Pagination verified
 
-👉 [6.4] Testing Express Search API Route (GET /api/emails/search)...
+ [6.4] Testing Express Search API Route (GET /api/emails/search)...
    API Response Status: 200
    API Response Payload: { success: true, total: 1, source: 'DATABASE_FALLBACK', dataCount: 1 }
-   ✅ Express GET /api/emails/search endpoint verified with axios
+    Express GET /api/emails/search endpoint verified with axios
 
-🧹 Cleaning up test resources...
-🎉 ALL PHASE 6 SUBTASKS VERIFIED SUCCESSFULLY!
+ Cleaning up test resources...
+ ALL PHASE 6 SUBTASKS VERIFIED SUCCESSFULLY!
 ```
 
 ---
 
 ### 3. Engineering Challenges & Solutions
 
-#### ⚠️ Challenge 1: Elasticsearch Client v8 HTTP Header Verification
+#### Challenge 1: Elasticsearch Client v8 HTTP Header Verification
 - **Problem**: When testing against a transient HTTP cluster, `@elastic/elasticsearch` v8 rejected all responses and threw `ProductNotSupportedError: The client noticed that the server is not Elasticsearch and we are unable to verify the connection`.
 - **Diagnosis**: The official Elasticsearch v8 JavaScript client enforces strict product verification. It inspects all HTTP responses for the header `x-elastic-product: Elasticsearch`. If this header is missing, the client immediately drops the connection.
 - **Solution**: Configured the mock test cluster to return `x-elastic-product: Elasticsearch` on all HTTP responses (including `HEAD`, `GET`, `PUT`, and `POST`). Result: Complete, native compatibility with official v8 client internals.
 
-#### ⚠️ Challenge 2: Zero-Downtime Search Architecture
+#### Challenge 2: Zero-Downtime Search Architecture
 - **Problem**: In developer and CI environments where a multi-gigabyte Elasticsearch cluster may not be running locally, scheduling and dashboard search features must continue operating seamlessly.
 - **Solution**: Implemented an automated dual-engine query router in `ElasticsearchService.searchEmails`. If the Elasticsearch cluster is healthy, it delegates to Elasticsearch with fuzzy `multi_match` queries. If unreachable, it executes a case-insensitive `contains` query across `recipientEmail`, `subject`, and `body` in PostgreSQL via Prisma. The frontend dashboard and backend APIs experience 100% uptime regardless of Elasticsearch cluster availability.
 
 ---
 
-## 🔹 Roadmap of Upcoming Phases (To Be Logged Sequentially)
+---
 
-- **Phase 7: Bull-Board & Express API Endpoints**
-  - Google OAuth token verification (`google-auth-library`).
-  - Lead CSV parser and bulk job enqueue endpoint (`POST /api/emails/schedule`).
-  - Bull-Board dashboard mounted at `/admin/queues`.
+# Phase 7: Bull-Board & Express API Endpoints
+
+### 1. What We Built & How We Proceeded
+- **Google OAuth & JWT Session Authentication (7.1)**:
+  - Authored [auth.service.ts](file:///e:/ReachInBox/backend/src/services/auth.service.ts) integrating `OAuth2Client` from `google-auth-library`. Verifies Google ID tokens, extracts verified profile details (email, name, picture), upserts the `User` record in PostgreSQL via Prisma, and signs session JWTs.
+  - Implemented [auth.middleware.ts](file:///e:/ReachInBox/backend/src/middleware/auth.middleware.ts) providing `requireAuth` and `optionalAuth` middleware.
+  - Authored [auth.controller.ts](file:///e:/ReachInBox/backend/src/controllers/auth.controller.ts) and [auth.routes.ts](file:///e:/ReachInBox/backend/src/routes/auth.routes.ts) mounting `POST /api/auth/google`, `POST /api/auth/demo`, and `GET /api/auth/me`.
+- **Multi-Sender Account Management Endpoints (7.6)**:
+  - Built [sender.controller.ts](file:///e:/ReachInBox/backend/src/controllers/sender.controller.ts) and [sender.routes.ts](file:///e:/ReachInBox/backend/src/routes/sender.routes.ts) mounting `GET /api/senders`, `POST /api/senders`, and `DELETE /api/senders/:id`.
+  - Supports automatic provisioning of Ethereal accounts or registering custom SMTP accounts with connection verification.
+- **Email Lead Ingestion & Staggered Scheduling (7.2)**:
+  - Built [csvParser.ts](file:///e:/ReachInBox/backend/src/lib/csvParser.ts) supporting CSV files, tabular text, and newline-delimited recipient strings with regex validation and intra-batch deduplication.
+  - Implemented `scheduleEmails` (`POST /api/emails/schedule`) in [email.controller.ts](file:///e:/ReachInBox/backend/src/controllers/email.controller.ts). Staggers recipient jobs across `interEmailDelayMs`, persists `EmailJob` records in PostgreSQL, synchronizes to Elasticsearch in real-time, and enqueues delayed jobs in BullMQ.
+- **Scheduled, Sent, & Analytics Endpoints (7.3, 7.4, 7.5)**:
+  - Built `GET /api/emails/scheduled`: paginated upcoming jobs with sender details.
+  - Built `GET /api/emails/sent`: paginated delivered and failed jobs with Ethereal preview links.
+  - Built `GET /api/emails/stats`: aggregate counts for total, scheduled, sent, failed, and rescheduled jobs.
+- **Bull-Board Queue Monitoring Dashboard (7.7)**:
+  - Authored [bullBoard.ts](file:///e:/ReachInBox/backend/src/config/bullBoard.ts) configuring `@bull-board/api` and `@bull-board/express` with `BullMQAdapter`.
+  - Mounted live dashboard at `/admin/queues` showing active, delayed, waiting, and completed BullMQ queue states.
+
+### 2. How Testing Was Conducted ([api.test.ts](file:///e:/ReachInBox/backend/src/test/api.test.ts))
+Authoring a dedicated end-to-end integration test suite verifying every endpoint:
+```text
+[TEST] Starting Phase 7 (Bull-Board & Express API Endpoints) Verification Suite...
+
+[INFO] Connected to Redis successfully
+[INFO] BullMQ Email Worker initialized with concurrency: 5
+   [INFO] Test server listening on http://127.0.0.1:5057
+
+[STEP] [7.1] Testing Authentication Endpoints...
+   Demo login response status: 200
+   [PASS] Demo login succeeded (User: demo@reachinbox.local)
+   Google auth response status: 200
+   [PASS] Google auth endpoint verified: issued session token for founder@startup.io
+   [PASS] GET /api/auth/me returned authenticated user profile
+
+[STEP] [7.6] Testing Sender Accounts Endpoints...
+   [PASS] Provisioned sender: wjxs5wxletwyd4l4@ethereal.email (Primary Outbound Mailer)
+   [PASS] GET /api/senders returned 1 registered sender account(s)
+
+[STEP] [7.2] Testing Email Scheduling Endpoint with CSV Leads...
+   Schedule response: { success: true, totalLeads: 3, invalidCount: 1, staggerDelayMs: 1500 }
+   [PASS] Batch CSV parsing, DB persistence, and BullMQ enqueuing verified
+
+[STEP] [7.3] Testing Scheduled Emails Endpoint...
+   Scheduled jobs count: 3
+   [PASS] GET /api/emails/scheduled returned 3 upcoming jobs with sender details
+
+[STEP] [7.5] Testing Stats Endpoint...
+   Email statistics: { total: 3, scheduled: 3, sent: 0, failed: 0, rescheduled: 0 }
+   [PASS] GET /api/emails/stats returned aggregate counts
+
+[STEP] [7.4] Testing Sent Emails Endpoint...
+   Sent jobs count: 1
+   [PASS] GET /api/emails/sent returned delivered jobs with preview URL: https://ethereal.email/message/test-delivered-url
+
+[STEP] [7.7] Testing Bull-Board Dashboard UI Route (GET /admin/queues)...
+   Bull-Board HTTP Status: 200
+   Content-Type: text/html; charset=utf-8
+   [PASS] Bull-Board dashboard UI accessible and mounted at /admin/queues
+
+[CLEANUP] Cleaning up test records and stopping test server...
+[SUCCESS] ALL PHASE 7 SUBTASKS VERIFIED SUCCESSFULLY!
+```
+
+---
+
+### 3. Engineering Challenges & Solutions
+
+#### Challenge 1: First-Line CSV Header Normalization
+- **Problem**: When lead CSV inputs contained leading newlines or empty preamble lines, header detection checking index 0 failed to identify the email column, misinterpreting the header string as an invalid recipient email.
+- **Solution**: Refactored [csvParser.ts](file:///e:/ReachInBox/backend/src/lib/csvParser.ts) to track header detection on the first non-empty line using a dedicated state flag (`headerProcessed`).
+
+#### Challenge 2: BullMQ Worker Missing Record Guard
+- **Problem**: When residual test jobs remained in BullMQ Redis delayed queues after transient test cleanup, worker threads attempting to update job status threw `RecordNotFound` database errors.
+- **Solution**: Added defensive record verification in [email.worker.ts](file:///e:/ReachInBox/backend/src/queues/email.worker.ts). If the job is not found in PostgreSQL, the worker logs an informational notice and gracefully emits `SKIPPED`.
+
+---
+
+## Roadmap of Upcoming Phases (To Be Logged Sequentially)
+
 - **Phase 8: Frontend Dashboard (Figma-Matched UI)**
   - Google Login screen, tabbed Scheduled/Sent tables, lead dropzone, Bull-Board shortcut.
 - **Phase 9 & 10: Testing, Load Simulation & Submission Kit**
   - Server restart resilience test, 1000+ lead CSV stress test, documentation, demo video script.
-
-
