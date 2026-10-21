@@ -1,0 +1,172 @@
+import { Worker, Job, DelayedError } from 'bullmq';
+import { redisConfig } from '../config/redis.js';
+import { prisma } from '../lib/prisma.js';
+import { EMAIL_QUEUE_NAME } from './email.queue.js';
+import { EmailJobPayload, EmailJobResult } from '../types/queue.types.js';
+import { checkRateLimit, incrementRateLimit } from '../services/rateLimiter.service.js';
+
+const concurrency = Number(process.env.WORKER_CONCURRENCY || 5);
+const defaultInterEmailDelayMs = Number(process.env.MIN_SEND_DELAY_MS || 2000);
+const defaultHourlyLimit = Number(process.env.MAX_EMAILS_PER_HOUR || 50);
+
+/**
+ * Hook for rate limit alerts (Phase 4 integrates live Slack notifications here)
+ */
+export type RateLimitAlertHandler = (alert: {
+  senderId: string;
+  currentCount: number;
+  hourlyLimit: number;
+  rescheduledTo: Date;
+}) => Promise<void> | void;
+
+let onRateLimitReached: RateLimitAlertHandler | null = null;
+
+export function setRateLimitAlertHandler(handler: RateLimitAlertHandler) {
+  onRateLimitReached = handler;
+}
+
+/**
+ * Worker processor function for handling email send jobs
+ */
+export async function processEmailJob(
+  job: Job<EmailJobPayload, EmailJobResult>
+): Promise<EmailJobResult> {
+  const { data } = job;
+  const { jobId, senderId, recipientEmail, subject, hourlyLimit, interEmailDelayMs } = data;
+  const effectiveLimit = hourlyLimit ?? defaultHourlyLimit;
+  const effectiveDelay = interEmailDelayMs ?? defaultInterEmailDelayMs;
+
+  console.log(`[Worker] Processing Job ${job.id} for recipient: ${recipientEmail}`);
+
+  // 1. Check idempotency in DB: Never re-send an email already marked SENT
+  const existingJob = await prisma.emailJob.findUnique({
+    where: { id: jobId },
+  });
+
+  if (existingJob?.status === 'SENT') {
+    console.log(`[Worker] Job ${jobId} already marked as SENT. Skipping.`);
+    return {
+      success: true,
+      jobId,
+      recipientEmail,
+      status: 'SKIPPED',
+      messageUrl: existingJob.etherealMessageUrl,
+    };
+  }
+
+  // 2. Redis-backed Hourly Rate Limit check
+  const rateCheck = await checkRateLimit(senderId, effectiveLimit);
+  if (!rateCheck.allowed) {
+    const rescheduledAt = new Date(Date.now() + rateCheck.msUntilReset);
+    console.warn(
+      `⚠️ [Worker] Sender ${senderId} hit hourly rate limit (${rateCheck.currentCount}/${effectiveLimit}). Rescheduling job ${jobId} to ${rescheduledAt.toISOString()}`
+    );
+
+    // Update job status in PostgreSQL to RESCHEDULED
+    await prisma.emailJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'RESCHEDULED',
+        scheduledAt: rescheduledAt,
+      },
+    });
+
+    // Notify alert subscriber (e.g., Slack)
+    if (onRateLimitReached) {
+      try {
+        await onRateLimitReached({
+          senderId,
+          currentCount: rateCheck.currentCount,
+          hourlyLimit: effectiveLimit,
+          rescheduledTo: rescheduledAt,
+        });
+      } catch (alertErr) {
+        console.error('Error invoking rate limit alert handler:', alertErr);
+      }
+    }
+
+    // Delay job in BullMQ to the next hour window
+    await job.moveToDelayed(Date.now() + rateCheck.msUntilReset, job.token);
+    throw new DelayedError();
+  }
+
+  // 3. Inter-Email Throttling Delay
+  if (effectiveDelay > 0) {
+    console.log(`⏱️ [Worker] Applying throttling delay: ${effectiveDelay}ms`);
+    await new Promise((resolve) => setTimeout(resolve, effectiveDelay));
+  }
+
+  // 4. Update status to SENDING
+  await prisma.emailJob.update({
+    where: { id: jobId },
+    data: {
+      status: 'SENDING',
+      attempts: { increment: 1 },
+    },
+  });
+
+  try {
+    // 5. Atomic Redis rate limit increment
+    await incrementRateLimit(senderId, effectiveLimit);
+
+    // 6. Complete and update DB to SENT
+    // (Phase 5 will plug full Nodemailer Ethereal transport here)
+    const sentAt = new Date();
+    await prisma.emailJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'SENT',
+        sentAt,
+      },
+    });
+
+    console.log(`✅ [Worker] Successfully processed job ${jobId} to ${recipientEmail}`);
+
+    return {
+      success: true,
+      jobId,
+      recipientEmail,
+      status: 'SENT',
+    };
+  } catch (error: any) {
+    console.error(`❌ [Worker] Failed to deliver job ${jobId}:`, error.message);
+
+    await prisma.emailJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'FAILED',
+        errorMessage: error.message,
+      },
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * BullMQ Worker instance
+ */
+export const emailWorker = new Worker<EmailJobPayload, EmailJobResult>(
+  EMAIL_QUEUE_NAME,
+  processEmailJob,
+  {
+    connection: redisConfig,
+    concurrency,
+  }
+);
+
+emailWorker.on('ready', () => {
+  console.log(`⚙️ BullMQ Email Worker ready with concurrency: ${concurrency}`);
+});
+
+emailWorker.on('completed', (job, result) => {
+  console.log(`✨ Job ${job.id} completed with status: ${result.status}`);
+});
+
+emailWorker.on('failed', (job, err) => {
+  console.error(`💥 Job ${job?.id} failed:`, err.message);
+});
+
+emailWorker.on('error', (err) => {
+  console.error('💥 Worker internal error:', err.message);
+});

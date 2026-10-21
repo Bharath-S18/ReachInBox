@@ -7,7 +7,7 @@ This document tracks all implementation phases and granular subtasks for buildin
 ## 📌 Overall Progress Summary
 - [x] **Phase 1: Project Scaffolding & Infrastructure** (6/6 completed)
 - [x] **Phase 2: Relational Database Schema & Prisma ORM Layer** (7/7 completed)
-- [ ] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (0/6 completed)
+- [x] **Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency** (6/6 completed)
 - [ ] **Phase 4: Slack OAuth Integration & Live Alerting** (0/5 completed)
 - [ ] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (0/4 completed)
 - [ ] **Phase 6: Elasticsearch Indexing & Full-Text Search** (0/4 completed)
@@ -40,12 +40,12 @@ This document tracks all implementation phases and granular subtasks for buildin
 ---
 
 ## 🔹 Phase 3: BullMQ Queue Engine, Rate Limiting & Concurrency
-- [ ] **3.1 Queue Initialization**: Create BullMQ `emailQueue` and `emailWorker` with persistent Redis connection.
-- [ ] **3.2 Worker Concurrency**: Support configurable worker concurrency via `WORKER_CONCURRENCY` env variable.
-- [ ] **3.3 Inter-Email Throttling Delay**: Enforce minimum delay between consecutive email sends (e.g., 2000ms) to avoid provider throttling.
-- [ ] **3.4 Redis-Backed Hourly Rate Limiting**: Implement distributed hourly window counter (`rate_limit:{senderId}:{YYYYMMDDHH}`) safe across multiple workers.
-- [ ] **3.5 Order-Preserving Rescheduling**: When hourly cap is exceeded, calculate milliseconds to next hour window and re-queue delayed job without dropping it.
-- [ ] **3.6 Restart Resilience & Idempotency**: Verify BullMQ delayed jobs persist across server restarts, and DB status checks prevent duplicate sends.
+- [x] **3.1 Queue Initialization**: Create BullMQ `emailQueue` and `emailWorker` with persistent Redis connection.
+- [x] **3.2 Worker Concurrency**: Support configurable worker concurrency via `WORKER_CONCURRENCY` env variable.
+- [x] **3.3 Inter-Email Throttling Delay**: Enforce minimum delay between consecutive email sends (e.g., 2000ms) to avoid provider throttling.
+- [x] **3.4 Redis-Backed Hourly Rate Limiting**: Implement distributed hourly window counter (`rate_limit:{senderId}:{YYYYMMDDHH}`) safe across multiple workers.
+- [x] **3.5 Order-Preserving Rescheduling**: When hourly cap is exceeded, calculate milliseconds to next hour window and re-queue delayed job without dropping it.
+- [x] **3.6 Restart Resilience & Idempotency**: Verify BullMQ delayed jobs persist across server restarts, and DB status checks prevent duplicate sends.
 
 ---
 
