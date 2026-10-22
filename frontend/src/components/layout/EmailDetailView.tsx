@@ -20,7 +20,7 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
   const [isStarred, setIsStarred] = useState(false);
 
   // Determine sender and recipient info
-  const senderName = 'Amanda Clark';
+  const senderName = (email as any).sender?.name || (email as any).senderAccount?.name || 'Amanda Clark';
   const senderEmail = (email as any).sender?.email || (email as any).senderAccount?.email || 'sender@example.com';
   const recipientName = email.recipientEmail ? email.recipientEmail.split('@')[0] : 'Oliver';
   const previewUrl = (email as SentEmailJob).previewUrl || (email as any).etherealMessageUrl;
@@ -57,7 +57,7 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
             <ArrowLeft className="w-5 h-5 stroke-[2]" />
           </button>
           <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-            {email.subject || 'Oliver, hello there! | MJWYT44 BM#52W01'}
+            {email.subject || 'Meeting follow-up - Scheduled'}
           </h1>
         </div>
 
@@ -147,38 +147,34 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
 
         {/* Email Body Copy */}
         <div className="space-y-4 text-sm text-gray-800 leading-relaxed font-sans">
-          <p>Hey {recipientName},</p>
-          <p>You've just RECEIVED something</p>
-
-          {/* Highlighted Yellow Callout Box (as shown in Image 4) */}
-          <div className="my-6 p-4 rounded-r-xl border-l-4 border-amber-400 bg-[#fffbeb] text-xs sm:text-sm text-gray-800 space-y-2">
-            <div className="font-semibold text-gray-900 flex items-center gap-1.5">
-              <span>⚡</span>
-              <span>Extremely Exclusive—Only 4 Spots Worldwide Per Year | $25,000 investment</span>
-              <span>⚡</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span>⚡</span>
-              <span>
-                To explore securing your private transformation, simply reply right now with{' '}
-                <strong className="text-gray-900 font-bold">"FLY OUT FIX"</strong>.
-              </span>
-            </div>
-          </div>
-
-          {/* Additional text or custom body content */}
-          {email.body && !email.body.includes('FLY OUT FIX') && (
+          {email.body ? (
             <div
-              className="py-2 text-gray-700"
+              className="py-2 text-gray-700 whitespace-pre-wrap leading-relaxed"
               dangerouslySetInnerHTML={{ __html: email.body }}
             />
-          )}
+          ) : (
+            <>
+              <p>Hey {recipientName},</p>
+              <p>You've just RECEIVED something</p>
 
-          <p className="pt-2">Your coach for world-class performance,</p>
-          <p className="font-semibold text-gray-900">Grant</p>
-          <p className="italic text-xs text-gray-500 pt-2">
-            P.S. Always remember that you can develop world class technique!
-          </p>
+              {/* Highlighted Yellow Callout Box (as shown in Image 4) */}
+              <div className="my-6 p-4 rounded-r-xl border-l-4 border-amber-400 bg-[#fffbeb] text-xs sm:text-sm text-gray-800 space-y-2">
+                <div className="font-semibold text-gray-900">
+                  Extremely Exclusive—Only 4 Spots Worldwide Per Year | $25,000 investment
+                </div>
+                <div>
+                  To explore securing your private transformation, simply reply right now with{' '}
+                  <strong className="text-gray-900 font-bold">"FLY OUT FIX"</strong>.
+                </div>
+              </div>
+
+              <p className="pt-2">Your coach for world-class performance,</p>
+              <p className="font-semibold text-gray-900">Grant</p>
+              <p className="italic text-xs text-gray-500 pt-2">
+                P.S. Always remember that you can develop world class technique!
+              </p>
+            </>
+          )}
         </div>
 
         {/* Attachments Section (Image 4) */}

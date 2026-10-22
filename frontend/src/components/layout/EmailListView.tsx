@@ -198,17 +198,17 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {job.previewUrl && (
+              {(job.previewUrl || (job as any).etherealMessageUrl) && (
                 <a
-                  href={job.previewUrl}
+                  href={job.previewUrl || (job as any).etherealMessageUrl}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   title="Open Ethereal Preview"
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-emerald-50 text-gray-400 hover:text-[#00a854] transition flex items-center gap-1 text-xs"
+                  className="p-1.5 rounded hover:bg-emerald-50 text-gray-400 hover:text-[#00a854] transition flex items-center gap-1 text-xs"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Preview</span>
+                  <span className="hidden sm:inline font-medium">Ethereal</span>
                 </a>
               )}
 

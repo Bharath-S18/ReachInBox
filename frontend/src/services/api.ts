@@ -50,7 +50,16 @@ export const emailApi = {
     const res = await api.get('/api/emails/scheduled', {
       params: { page, limit },
     });
-    const jobs = (res.data.data || res.data.jobs || []) as ScheduledEmailJob[];
+    const rawJobs = (res.data.data || res.data.jobs || []) as any[];
+    const jobs = rawJobs.map((j: any) => ({
+      ...j,
+      scheduledTime: j.scheduledTime || j.scheduledAt,
+      senderAccount: j.senderAccount || j.sender || {
+        id: j.senderId || 's-1',
+        email: j.sender?.email || 'sender@example.com',
+        hourlyLimit: j.sender?.hourlyLimit || 50,
+      },
+    })) as ScheduledEmailJob[];
     const total = res.data.total ?? jobs.length;
     return {
       jobs,
@@ -72,7 +81,15 @@ export const emailApi = {
     const res = await api.get('/api/emails/sent', {
       params: { page, limit },
     });
-    const jobs = (res.data.data || res.data.jobs || []) as SentEmailJob[];
+    const rawJobs = (res.data.data || res.data.jobs || []) as any[];
+    const jobs = rawJobs.map((j: any) => ({
+      ...j,
+      previewUrl: j.previewUrl || j.etherealMessageUrl || null,
+      senderAccount: j.senderAccount || j.sender || {
+        id: j.senderId || 's-1',
+        email: j.sender?.email || 'sender@example.com',
+      },
+    })) as SentEmailJob[];
     const total = res.data.total ?? jobs.length;
     return {
       jobs,
@@ -134,7 +151,8 @@ export const emailApi = {
 export const senderApi = {
   async list(): Promise<{ senders: SenderAccount[] }> {
     const res = await api.get('/api/senders');
-    return res.data;
+    const senders = (res.data.data || res.data.senders || []) as SenderAccount[];
+    return { senders };
   },
 
   async create(data: {
