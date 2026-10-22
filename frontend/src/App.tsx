@@ -21,7 +21,7 @@ import {
 
 const GOOGLE_CLIENT_ID =
   (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID ||
-  '102938475610-exampleclientid123456789.apps.googleusercontent.com';
+  '725831271102-r882e5ps9o722796a745qd8is771snjk.apps.googleusercontent.com';
 
 export function AppContent() {
   const [user, setUser] = useState<User | null>(null);
