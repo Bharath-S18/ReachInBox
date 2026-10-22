@@ -88,3 +88,4 @@ export async function demoAuth(req: Request, res: Response): Promise<void> {
     res.status(500).json({ success: false, error: error.message });
   }
 }
+

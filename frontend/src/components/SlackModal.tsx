@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Bell,
-  CheckCircle2,
   ExternalLink,
   Hash,
   Link2Off,
@@ -62,58 +61,57 @@ export const SlackModal: React.FC<SlackModalProps> = ({
     try {
       await slackApi.disconnect();
       onStatusUpdated();
-      setTestResult('Slack disconnected.');
     } catch (err: any) {
-      alert(`Disconnect failed: ${err.message}`);
+      alert(`Failed to disconnect: ${err.message}`);
     } finally {
       setDisconnecting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border-card bg-surface-card p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-100">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-card pb-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-border-card bg-surface-container p-2 text-border-highlight">
+            <div className="rounded-xl border border-purple-200 bg-purple-50 p-2.5 text-purple-600">
               <Hash className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-display text-base font-bold text-white tracking-tight">
+              <h3 className="text-base font-bold text-gray-900 tracking-tight">
                 Slack Live Alert Integration
               </h3>
-              <p className="font-mono text-[11px] text-text-muted">
+              <p className="text-xs text-gray-500">
                 OAuth 2.0 Real-time rate limit notifications
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg border border-transparent p-1.5 text-text-muted transition-colors hover:border-border-card hover:bg-surface-container hover:text-white"
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="mt-6 space-y-5">
+        <div className="mt-5 space-y-4">
           {/* Status Box */}
-          <div className="rounded-xl border border-border-card bg-surface-container p-4">
+          <div className="rounded-xl border border-gray-100 bg-[#f9fafb] p-4">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs uppercase tracking-wider text-text-muted">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Connection Status
               </span>
               <span
-                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-semibold ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                   status?.connected
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-gray-100 text-gray-600 border border-gray-200'
                 }`}
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    status?.connected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
+                    status?.connected ? 'bg-[#00a854] animate-pulse' : 'bg-gray-400'
                   }`}
                 />
                 {status?.connected ? 'CONNECTED' : 'DISCONNECTED'}
@@ -121,62 +119,66 @@ export const SlackModal: React.FC<SlackModalProps> = ({
             </div>
 
             {status?.connected && (
-              <div className="mt-3 pt-3 border-t border-border-card/60 flex items-center justify-between text-xs font-mono">
-                <span className="text-text-muted">Target Channel:</span>
-                <span className="text-white font-semibold">#{status.channelName || 'alerts'}</span>
+              <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-xs">
+                <span className="text-gray-500">Target Channel:</span>
+                <span className="text-gray-900 font-semibold">#{status.channelName || 'alerts'}</span>
               </div>
             )}
           </div>
 
           {/* Test Alert Banner / Output */}
           {testResult && (
-            <div className="rounded-lg border border-border-highlight/30 bg-sky-950/20 p-3 font-mono text-xs text-border-highlight">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
               <div className="flex items-center gap-2">
-                <Bell className="h-3.5 w-3.5" />
+                <Bell className="h-4 w-4 text-[#00a854]" />
                 <span>{testResult}</span>
               </div>
             </div>
           )}
 
-          {/* Info Card */}
-          <div className="flex items-start gap-3 rounded-lg border border-border-card bg-surface-container/50 p-3.5 font-sans text-xs text-text-muted">
-            <ShieldAlert className="h-4 w-4 shrink-0 text-border-highlight mt-0.5" />
-            <p>
-              When a sender account reaches its hourly limit, ReachInbox posts a formatted Block Kit notification into your Slack channel detailing the sender, the exact threshold count, and the deferred jobs.
-            </p>
+          {/* Explanation Banner */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+            <div className="flex items-start gap-2.5">
+              <ShieldAlert className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Automated Threshold Alerting</p>
+                <p className="mt-1 text-amber-800 leading-relaxed text-[11px]">
+                  When any sender account reaches its hourly dispatch threshold, the BullMQ worker
+                  immediately reschedules the job and dispatches a formatted alert into your Slack channel.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="pt-2 flex flex-col gap-2.5">
-            {status?.connected ? (
-              <>
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-2">
+            {!status?.connected ? (
+              <button
+                onClick={handleConnect}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#00a854] py-2.5 text-sm font-semibold text-white transition hover:bg-[#009249] shadow-sm"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>Connect Slack Workspace</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleTestAlert}
                   disabled={testing}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 font-display text-xs font-semibold text-black shadow-glow-white transition-all hover:bg-slate-200 active:scale-95 disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#00a854] bg-[#e8f5e9] py-2.5 text-xs font-semibold text-[#00a854] hover:bg-[#dcedc8] transition disabled:opacity-50"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  <span>{testing ? 'Sending Block Kit...' : 'Send Test Rate Limit Alert'}</span>
+                  <span>{testing ? 'Dispatching...' : 'Dispatch Test Alert'}</span>
                 </button>
-
                 <button
                   onClick={handleDisconnect}
                   disabled={disconnecting}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 font-mono text-xs text-red-400 transition-all hover:bg-red-500/20 active:scale-95 disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition disabled:opacity-50"
                 >
                   <Link2Off className="h-3.5 w-3.5" />
-                  <span>{disconnecting ? 'Disconnecting...' : 'Disconnect Slack'}</span>
+                  <span>Disconnect</span>
                 </button>
-              </>
-            ) : (
-              <button
-                onClick={handleConnect}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 font-display text-xs font-semibold text-black shadow-sm transition-all hover:bg-emerald-400 active:scale-95"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Connect Slack Workspace (OAuth)</span>
-                <ExternalLink className="h-3.5 w-3.5 ml-1" />
-              </button>
+              </div>
             )}
           </div>
         </div>

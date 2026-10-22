@@ -26,7 +26,7 @@ api.interceptors.request.use((config) => {
 
 export const authApi = {
   async googleLogin(idToken: string): Promise<{ token: string; user: User }> {
-    const res = await api.post('/api/auth/google', { idToken });
+    const res = await api.post('/api/auth/google', { credential: idToken, idToken });
     return res.data;
   },
 
@@ -42,29 +42,53 @@ export const authApi = {
 };
 
 export const emailApi = {
-  async getScheduled(page = 1, limit = 20): Promise<{
+  async getScheduled(page = 1, limit = 50): Promise<{
     jobs: ScheduledEmailJob[];
-    pagination: { total: number; page: number; limit: number; totalPages: number };
+    total: number;
+    pagination?: { total: number; page: number; limit: number; totalPages: number };
   }> {
     const res = await api.get('/api/emails/scheduled', {
       params: { page, limit },
     });
-    return res.data;
+    const jobs = (res.data.data || res.data.jobs || []) as ScheduledEmailJob[];
+    const total = res.data.total ?? jobs.length;
+    return {
+      jobs,
+      total,
+      pagination: {
+        total,
+        page: res.data.page ?? page,
+        limit: res.data.limit ?? limit,
+        totalPages: res.data.totalPages ?? 1,
+      },
+    };
   },
 
-  async getSent(page = 1, limit = 20): Promise<{
+  async getSent(page = 1, limit = 50): Promise<{
     jobs: SentEmailJob[];
-    pagination: { total: number; page: number; limit: number; totalPages: number };
+    total: number;
+    pagination?: { total: number; page: number; limit: number; totalPages: number };
   }> {
     const res = await api.get('/api/emails/sent', {
       params: { page, limit },
     });
-    return res.data;
+    const jobs = (res.data.data || res.data.jobs || []) as SentEmailJob[];
+    const total = res.data.total ?? jobs.length;
+    return {
+      jobs,
+      total,
+      pagination: {
+        total,
+        page: res.data.page ?? page,
+        limit: res.data.limit ?? limit,
+        totalPages: res.data.totalPages ?? 1,
+      },
+    };
   },
 
   async getStats(): Promise<EmailStats> {
     const res = await api.get('/api/emails/stats');
-    return res.data.stats;
+    return res.data.stats || { total: 0, scheduled: 0, sent: 0, failed: 0, rescheduled: 0 };
   },
 
   async search(query: string): Promise<{ source: string; query: string; total: number; results: SearchResult[] }> {
@@ -74,17 +98,30 @@ export const emailApi = {
     return res.data;
   },
 
-  async schedule(formData: FormData): Promise<{
+  async schedule(payload: FormData | {
+    subject: string;
+    body: string;
+    recipients: string;
+    startTime?: string;
+    scheduledAt?: string;
+    interEmailDelayMs?: number;
+    hourlyLimit?: number;
+    senderId?: string;
+  }): Promise<{
     success: boolean;
     totalLeads: number;
     invalidCount: number;
     staggerDelayMs: number;
   }> {
-    const res = await api.post('/api/emails/schedule', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    if (payload instanceof FormData) {
+      const res = await api.post('/api/emails/schedule', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return res.data;
+    }
+    const res = await api.post('/api/emails/schedule', payload);
     return res.data;
   },
 

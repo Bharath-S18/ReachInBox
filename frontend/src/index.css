@@ -3,45 +3,34 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #020408;
-  color: #e5e1e4;
+  background-color: #ffffff;
+  color: #111827;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle dot-grid ambient background from Vengeance UI */
-.bg-grid-tech {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Custom dark scrollbar */
+/* Custom subtle scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f9fafb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #38bdf8;
-}
-
-@keyframes border-beam {
-  100% {
-    offset-distance: 100%;
-  }
+  background: #9ca3af;
 }
