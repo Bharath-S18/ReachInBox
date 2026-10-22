@@ -12,6 +12,7 @@ export interface ParseLeadsResult {
 
 export function parseAndValidateLeadEmails(input: string | string[]): ParseLeadsResult {
   const candidateEmails: string[] = [];
+  let invalidCount = 0;
 
   if (Array.isArray(input)) {
     for (const item of input) {
@@ -45,8 +46,13 @@ export function parseAndValidateLeadEmails(input: string | string[]): ParseLeads
         }
       }
 
-      if (emailColumnIndex >= 0 && cells[emailColumnIndex]) {
-        candidateEmails.push(cells[emailColumnIndex]);
+      if (emailColumnIndex >= 0) {
+        const val = cells[emailColumnIndex] ? cells[emailColumnIndex].trim() : '';
+        if (val) {
+          candidateEmails.push(val);
+        } else {
+          invalidCount++;
+        }
       } else {
         // Fallback: search all cells for email regex matches
         let found = false;
@@ -66,7 +72,6 @@ export function parseAndValidateLeadEmails(input: string | string[]): ParseLeads
 
   const seen = new Set<string>();
   const validEmails: string[] = [];
-  let invalidCount = 0;
 
   for (const raw of candidateEmails) {
     const cleaned = raw.toLowerCase().trim();
