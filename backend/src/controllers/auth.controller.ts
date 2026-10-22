@@ -5,16 +5,16 @@ import { SlackService } from '../services/slack.service.js';
 
 export async function googleAuth(req: Request, res: Response): Promise<void> {
   try {
-    const { credential } = req.body;
-    if (!credential) {
+    const tokenPayload = req.body?.credential || req.body?.idToken || req.body?.accessToken || req.body?.token;
+    if (!tokenPayload) {
       res.status(400).json({
         success: false,
-        error: 'Google credential (ID token) is required',
+        error: 'Google credential or access token is required',
       });
       return;
     }
 
-    const profile = await AuthService.verifyGoogleIdToken(credential);
+    const profile = await AuthService.verifyGoogleIdToken(tokenPayload);
     const user = await AuthService.findOrCreateUser(profile);
     const token = AuthService.generateSessionToken(user);
 

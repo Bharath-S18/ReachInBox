@@ -23,34 +23,54 @@ export interface GoogleUserProfile {
 
 export class AuthService {
   /**
-   * Cryptographically verifies Google ID Token using official google-auth-library
+   * Cryptographically verifies Google ID Token or Access Token using Google Auth API
    */
-  public static async verifyGoogleIdToken(idToken: string): Promise<GoogleUserProfile> {
-    if (!idToken) {
-      throw new Error('Google ID token is required');
+  public static async verifyGoogleIdToken(token: string): Promise<GoogleUserProfile> {
+    if (!token) {
+      throw new Error('Google authentication token is required');
     }
 
+    // 1. Try google-auth-library verifyIdToken first (for JWT ID tokens)
     try {
       const ticket = await googleClient.verifyIdToken({
-        idToken,
+        idToken: token,
         audience: GOOGLE_CLIENT_ID ? GOOGLE_CLIENT_ID : undefined,
       });
 
       const payload = ticket.getPayload();
-      if (!payload || !payload.email) {
-        throw new Error('Failed to retrieve verified email from Google ID Token');
+      if (payload && payload.email) {
+        return {
+          email: payload.email,
+          name: payload.name || payload.email.split('@')[0],
+          avatar: payload.picture,
+          googleId: payload.sub,
+        };
+      }
+    } catch (idError: any) {
+      // 2. If it is an OAuth2 Access Token (e.g. from useGoogleLogin), verify with Google userinfo API
+      try {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (userInfoRes.ok) {
+          const userInfo = (await userInfoRes.json()) as any;
+          if (userInfo && userInfo.email) {
+            return {
+              email: userInfo.email,
+              name: userInfo.name || userInfo.email.split('@')[0],
+              avatar: userInfo.picture,
+              googleId: userInfo.sub || `google-${userInfo.email}`,
+            };
+          }
+        }
+      } catch (accessErr: any) {
+        // Fall through to mock check
       }
 
-      return {
-        email: payload.email,
-        name: payload.name || payload.email.split('@')[0],
-        avatar: payload.picture,
-        googleId: payload.sub,
-      };
-    } catch (error: any) {
       // In development / testing environments, allow a structured mock token
-      if (process.env.NODE_ENV !== 'production' && idToken.startsWith('mock-google-token:')) {
-        const parts = idToken.split(':');
+      if (process.env.NODE_ENV !== 'production' && token.startsWith('mock-google-token:')) {
+        const parts = token.split(':');
         const email = parts[1] || 'demo@reachinbox.local';
         const name = parts[2] || 'Mock Google User';
         return {
@@ -61,8 +81,10 @@ export class AuthService {
         };
       }
 
-      throw new Error(`Invalid Google ID Token: ${error.message}`);
+      throw new Error(`Invalid Google Token: ${idError.message}`);
     }
+
+    throw new Error('Google token payload did not contain verified profile information');
   }
 
   /**
