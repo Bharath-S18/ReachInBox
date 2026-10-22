@@ -30,8 +30,8 @@ export const authApi = {
     return res.data;
   },
 
-  async demoLogin(): Promise<{ token: string; user: User }> {
-    const res = await api.post('/api/auth/demo');
+  async demoLogin(email?: string, name?: string): Promise<{ token: string; user: User }> {
+    const res = await api.post('/api/auth/demo', { email, name });
     return res.data;
   },
 
