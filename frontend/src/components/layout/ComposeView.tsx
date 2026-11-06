@@ -53,7 +53,11 @@ function getAvatarColor(str: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function createRecipientChip(raw: string): RecipientChip | null {
+function createRecipientChip(
+  raw: string,
+  currentUser?: User | null,
+  senders: SenderAccount[] = []
+): RecipientChip | null {
   const trimmed = raw.trim().replace(/^[,\s;]+|[,\s;]+$/g, '');
   if (!trimmed) return null;
 
@@ -70,8 +74,35 @@ function createRecipientChip(raw: string): RecipientChip | null {
     const cleanPrefix = prefix.split(/[._-]/)[0];
     name = cleanPrefix.charAt(0).toUpperCase() + cleanPrefix.slice(1);
   } else {
-    name = trimmed;
-    email = trimmed;
+    // User typed a name or keyword without '@' (e.g. "Bharath" or "me")
+    const lower = trimmed.toLowerCase();
+    if (
+      currentUser?.email &&
+      (lower === 'me' ||
+        lower === 'myself' ||
+        (currentUser.name && currentUser.name.toLowerCase().includes(lower)))
+    ) {
+      name = currentUser.name || trimmed;
+      email = currentUser.email;
+    } else {
+      // Check if it matches any configured SMTP sender account
+      const matched = senders.find(
+        (s) =>
+          (s.name && s.name.toLowerCase().includes(lower)) ||
+          s.email.toLowerCase().includes(lower)
+      );
+      if (matched) {
+        name = matched.name || trimmed;
+        email = matched.email;
+      } else {
+        return null;
+      }
+    }
+  }
+
+  // Ensure email has valid format with @ and a domain
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    return null;
   }
 
   const avatarLetter = (name || email || 'U').charAt(0).toUpperCase();
@@ -247,12 +278,23 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
   ) => {
     const parts = text.split(/[,\n;]+/).map((p) => p.trim()).filter(Boolean);
     const newChips: RecipientChip[] = [];
+    let hasInvalid = false;
+
     for (const part of parts) {
-      const chip = createRecipientChip(part);
+      const chip = createRecipientChip(part, currentUser, senders);
       if (chip) {
         newChips.push(chip);
+      } else {
+        hasInvalid = true;
       }
     }
+
+    if (hasInvalid && newChips.length === 0) {
+      setErrorMsg(`"${text.trim()}" is not a valid email address. Please enter a valid email (e.g. name@domain.com)`);
+    } else if (hasInvalid) {
+      setErrorMsg('Some invalid email addresses were skipped. Ensure all recipients have @ and a domain.');
+    }
+
     if (newChips.length > 0) {
       listSetter((prev) => {
         const existingEmails = new Set(prev.map((r) => r.email.toLowerCase()));
