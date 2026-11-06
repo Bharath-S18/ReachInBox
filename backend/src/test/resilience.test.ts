@@ -161,7 +161,7 @@ async function runPhase9ResilienceTestSuite() {
     // Register test alert callback
     setRateLimitAlertHandler(async (event) => {
       slackAlertFired = true;
-      alertDetails = `Sender: ${event.senderEmail}, Exceeded Count: ${event.currentCount}/${event.hourlyLimit}, Rescheduled: ${event.rescheduledCount}`;
+      alertDetails = `Sender: ${event.senderId}, Exceeded Count: ${event.currentCount}/${event.hourlyLimit}, RescheduledTo: ${event.rescheduledTo.toISOString()}`;
       console.log(`   [SLACK EVENT TRIGGERED] Rate limit reached alert: ${alertDetails}`);
     });
 
@@ -191,7 +191,7 @@ async function runPhase9ResilienceTestSuite() {
     };
     await setRateLimitAlertHandler((e) => {
       slackAlertFired = true;
-      alertDetails = `Sender: ${e.senderEmail}, Limit: ${e.hourlyLimit}`;
+      alertDetails = `Sender: ${e.senderId}, Limit: ${e.hourlyLimit}`;
     });
 
     return `Rate limit enforced at ${rateLimitCap}/hour. Atomic counter blocked surplus job. Alert webhook fired cleanly: ${alertDetails || 'Verified'}`;

@@ -187,12 +187,36 @@ graph TD
 
 ---
 
+---
+
+## Remediation Roadmap: Codebase Stabilization & Real-Data Integration
+
+Following a full-codebase audit against runtime behavior, this remediation roadmap bridges the gap between written code and verified live functionality.
+
+### Phase R1: Backend Operationalization & Prisma Client Generation
+1. Complete `npm install` in `backend/` for `cors`, `jsonwebtoken`, `axios`, `csv-parser`, `@prisma/client`.
+2. Generate Prisma Client (`npx prisma generate`).
+3. Ensure local Redis daemon is running on port 6379.
+4. Launch Express backend, verify `/health` and `/admin/queues`.
+
+### Phase R2: Frontend Real-Data Integration & Gaps Remediation
+1. Purge all silent mock fallbacks in `App.tsx` (fake stats, fake jobs, fake Oliver Brown user); add explicit connection error states.
+2. Update `EmailDetailView.tsx` to display true dynamic email content (body, sender, recipient, preview link) and remove hardcoded tennis attachments.
+3. Wire `TopSearchBar.tsx` to call `emailApi.search(query)` against the backend Elasticsearch / PostgreSQL fallback engine.
+4. Connect `QueueTelemetryView.tsx` to live backend queue stats rather than simulated worker thread counters.
+5. Add automatic polling for scheduled and sent job lists.
+6. Clean up dead/orphaned legacy components.
+
+### Phase R3: End-to-End Live Workflow Verification
+1. Validate authentication (Google OAuth / Demo login).
+2. Provision Ethereal SMTP sender accounts via `SendersModal`.
+3. Schedule single and CSV batch emails via `ComposeView`.
+4. Observe BullMQ queue execution, job delay countdown, and live Ethereal email delivery.
+5. Test rate-limit trigger and verify live Slack alert dispatch.
+6. Test full-text search across recipients, subjects, and email bodies.
+
 ### Phase 10: Submission Kit & Documentation
-- **Comprehensive README.md**:
-  - Quick start instructions (`docker compose up`, `npm install`, `npm run dev`).
-  - Architecture breakdown and BullMQ persistent scheduling explanation.
-  - Rate limiting & Redis sliding window documentation.
-  - Slack OAuth app setup guide.
-  - Ethereal SMTP configuration guide.
-- **5-Minute Demo Video Script**:
-  - Step-by-step checklist matching all criteria in the assignment rubric.
+- Comprehensive README.md with architecture and setup details.
+- Environment configuration guide.
+- 5-minute timed demo video script.
+- Final code review and build validation.

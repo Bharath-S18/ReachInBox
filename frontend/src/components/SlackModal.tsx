@@ -105,13 +105,13 @@ export const SlackModal: React.FC<SlackModalProps> = ({
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                   status?.connected
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
                     : 'bg-gray-100 text-gray-600 border border-gray-200'
                 }`}
               >
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    status?.connected ? 'bg-[#00a854] animate-pulse' : 'bg-gray-400'
+                    status?.connected ? 'bg-[#0b57d0] animate-pulse' : 'bg-gray-400'
                   }`}
                 />
                 {status?.connected ? 'CONNECTED' : 'DISCONNECTED'}
@@ -128,9 +128,9 @@ export const SlackModal: React.FC<SlackModalProps> = ({
 
           {/* Test Alert Banner / Output */}
           {testResult && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-[#041e49]">
               <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-[#00a854]" />
+                <Bell className="h-4 w-4 text-[#0b57d0]" />
                 <span>{testResult}</span>
               </div>
             </div>
@@ -155,7 +155,7 @@ export const SlackModal: React.FC<SlackModalProps> = ({
             {!status?.connected ? (
               <button
                 onClick={handleConnect}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#00a854] py-2.5 text-sm font-semibold text-white transition hover:bg-[#009249] shadow-sm"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0b57d0] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0842a0] shadow-sm"
               >
                 <ExternalLink className="h-4 w-4" />
                 <span>Connect Slack Workspace</span>
@@ -165,7 +165,7 @@ export const SlackModal: React.FC<SlackModalProps> = ({
                 <button
                   onClick={handleTestAlert}
                   disabled={testing}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#00a854] bg-[#e8f5e9] py-2.5 text-xs font-semibold text-[#00a854] hover:bg-[#dcedc8] transition disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#0b57d0] bg-blue-50 py-2.5 text-xs font-semibold text-[#0b57d0] hover:bg-[#d3e3fd] transition disabled:opacity-50"
                 >
                   <Send className="h-3.5 w-3.5" />
                   <span>{testing ? 'Dispatching...' : 'Dispatch Test Alert'}</span>

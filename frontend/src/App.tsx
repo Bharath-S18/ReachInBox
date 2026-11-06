@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopSearchBar } from './components/layout/TopSearchBar';
@@ -46,10 +47,17 @@ export function AppContent() {
   const [scheduledJobs, setScheduledJobs] = useState<ScheduledEmailJob[]>([]);
   const [sentJobs, setSentJobs] = useState<SentEmailJob[]>([]);
 
+  // Backend connectivity status
+  const [backendOnline, setBackendOnline] = useState(true);
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSource, setSearchSource] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const searchTimerRef = useRef<any>(null);
 
   // Check existing token on mount
   useEffect(() => {
@@ -65,6 +73,7 @@ export function AppContent() {
       .then((data) => {
         setUser(data.user);
         localStorage.setItem('reachinbox_user', JSON.stringify(data.user));
+        setBackendOnline(true);
       })
       .catch(() => {
         if (cachedUser) {
@@ -72,19 +81,12 @@ export function AppContent() {
             setUser(JSON.parse(cachedUser));
           } catch {
             localStorage.removeItem('reachinbox_token');
+            localStorage.removeItem('reachinbox_user');
             setUser(null);
           }
         } else {
-          // If a token exists but backend is temporarily unreachable, maintain seamless session
-          const fallback: User = {
-            id: 'usr_evaluator_oliver',
-            email: 'oliver.brown@domain.io',
-            name: 'Oliver Brown',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80',
-            createdAt: new Date().toISOString(),
-          };
-          setUser(fallback);
-          localStorage.setItem('reachinbox_user', JSON.stringify(fallback));
+          localStorage.removeItem('reachinbox_token');
+          setUser(null);
         }
       })
       .finally(() => {
@@ -92,7 +94,7 @@ export function AppContent() {
       });
   }, []);
 
-  // Fetch all dashboard data
+  // Fetch all real dashboard data from backend API
   const loadDashboardData = async (silent = false) => {
     if (!silent) setLoading(true);
     setIsRefreshing(true);
@@ -100,109 +102,31 @@ export function AppContent() {
     try {
       const [statsRes, sendersRes, slackRes, scheduledRes, sentRes] =
         await Promise.all([
-          emailApi.getStats().catch(() => ({
-            total: 0,
-            scheduled: 12,
-            sent: 785,
-            failed: 0,
-            rescheduled: 0,
-          })),
+          emailApi.getStats().catch(() => {
+            setBackendOnline(false);
+            return { total: 0, scheduled: 0, sent: 0, failed: 0, rescheduled: 0 };
+          }),
           senderApi.list().catch(() => ({ senders: [] })),
           slackApi.getStatus().catch(() => ({ connected: false })),
-          emailApi.getScheduled(1, 50).catch(() => ({ jobs: [], total: 0 })),
-          emailApi.getSent(1, 50).catch(() => ({ jobs: [], total: 0 })),
+          emailApi.getScheduled(1, 100).catch(() => {
+            setBackendOnline(false);
+            return { jobs: [], total: 0 };
+          }),
+          emailApi.getSent(1, 100).catch(() => {
+            setBackendOnline(false);
+            return { jobs: [], total: 0 };
+          }),
         ]);
 
+      setBackendOnline(true);
       setStats(statsRes);
       setSenders(sendersRes.senders || []);
       setSlackStatus(slackRes);
-
-      // If scheduled jobs exist from database, use them; otherwise provide initial sample leads matching screenshot
-      if (scheduledRes.jobs && scheduledRes.jobs.length > 0) {
-        setScheduledJobs(scheduledRes.jobs);
-      } else {
-        // Sample baseline matching Image 2
-        setScheduledJobs([
-          {
-            id: 'job-1',
-            recipientEmail: 'john.smith@acme.com',
-            subject: 'Meeting follow-up - Scheduled',
-            body: 'Hi John, just wanted to follow up on our meeting yesterday regarding the Q3 product roadmap...',
-            scheduledTime: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
-            status: 'SCHEDULED',
-            senderAccount: {
-              id: 's-1',
-              email: 'oliver.brown@domain.io',
-              hourlyLimit: 50,
-            },
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: 'job-2',
-            recipientEmail: 'olive@venturecapital.com',
-            subject: "Ramit, great to meet you - you'll love it",
-            body: 'Hi Olive, just wanted to follow up on our meeting and share the executive outreach metrics...',
-            scheduledTime: new Date(Date.now() + 1000 * 60 * 180).toISOString(),
-            status: 'SCHEDULED',
-            senderAccount: {
-              id: 's-1',
-              email: 'oliver.brown@domain.io',
-              hourlyLimit: 50,
-            },
-            createdAt: new Date().toISOString(),
-          },
-        ]);
-      }
-
-      // If sent jobs exist from database, use them; otherwise provide initial sample matching Image 3
-      if (sentRes.jobs && sentRes.jobs.length > 0) {
-        setSentJobs(sentRes.jobs);
-      } else {
-        // Sample baseline matching Image 3 & 4
-        setSentJobs([
-          {
-            id: 'sent-1',
-            recipientEmail: 'sarah.wilson@clientcorp.io',
-            subject: 'Re: Project Update',
-            body: 'Thanks for the update, Sarah. Looks good! We are ready to roll out the scheduler pipeline.',
-            status: 'SENT',
-            sentAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-            previewUrl: 'https://ethereal.email',
-            senderAccount: {
-              id: 's-1',
-              email: 'oliver.brown@domain.io',
-            },
-          },
-          {
-            id: 'sent-2',
-            recipientEmail: 'support@platform.dev',
-            subject: 'Issue with login',
-            body: 'I am having trouble logging in to the dashboard with my SSO provider. Could you please take a look?',
-            status: 'SENT',
-            sentAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-            previewUrl: 'https://ethereal.email',
-            senderAccount: {
-              id: 's-1',
-              email: 'oliver.brown@domain.io',
-            },
-          },
-          {
-            id: 'sent-3',
-            recipientEmail: 'oliver.brown@domain.io',
-            subject: 'Oliver, hello there! | MJWYT44 BM#52W01',
-            body: 'Hey Oliver, You have just RECEIVED something. Extremely Exclusive—Only 4 Spots Worldwide Per Year | $25,000 investment. To explore securing your private transformation, simply reply right now with "FLY OUT FIX". Your coach for world-class performance, Grant.',
-            status: 'SENT',
-            sentAt: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-            previewUrl: 'https://ethereal.email',
-            senderAccount: {
-              id: 's-1',
-              email: 'amanda.clark@sender.io',
-            },
-          },
-        ]);
-      }
+      setScheduledJobs(scheduledRes.jobs || []);
+      setSentJobs(sentRes.jobs || []);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
+      setBackendOnline(false);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -214,6 +138,44 @@ export function AppContent() {
       loadDashboardData();
     }
   }, [user]);
+
+  // Real-time polling every 8 seconds when user is authenticated
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      loadDashboardData(true);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Debounced search querying Elasticsearch v8 backend
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchSource(null);
+      setIsSearching(false);
+      return;
+    }
+
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const searchRes = await emailApi.search(searchQuery.trim());
+        setSearchSource(searchRes.source || 'DATABASE_FALLBACK');
+      } catch {
+        setSearchSource('DATABASE_FALLBACK');
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const handleLogout = () => {
     localStorage.removeItem('reachinbox_token');
@@ -230,8 +192,8 @@ export function AppContent() {
       if (selectedEmail?.email.id === id) {
         setSelectedEmail(null);
       }
+      loadDashboardData(true);
     } catch (err: any) {
-      // Local fallback removal
       setScheduledJobs((prev) => prev.filter((j) => j.id !== id));
     }
   };
@@ -240,14 +202,14 @@ export function AppContent() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-[#00a854] border-t-transparent animate-spin" />
+          <div className="w-8 h-8 rounded-full border-2 border-[#0b57d0] border-t-transparent animate-spin" />
           <span className="text-xs font-medium text-gray-400">Loading ReachInbox...</span>
         </div>
       </div>
     );
   }
 
-  // If user is not logged in: Show redesigned Login Screen (Image 1)
+  // If user is not logged in: Show authentic Login Screen
   if (!user) {
     return (
       <LoginScreen
@@ -265,7 +227,7 @@ export function AppContent() {
     return (
       j.recipientEmail.toLowerCase().includes(queryLower) ||
       j.subject.toLowerCase().includes(queryLower) ||
-      j.body.toLowerCase().includes(queryLower)
+      (j.body && j.body.toLowerCase().includes(queryLower))
     );
   });
 
@@ -274,7 +236,7 @@ export function AppContent() {
     return (
       j.recipientEmail.toLowerCase().includes(queryLower) ||
       j.subject.toLowerCase().includes(queryLower) ||
-      j.body.toLowerCase().includes(queryLower)
+      (j.body && j.body.toLowerCase().includes(queryLower))
     );
   });
 
@@ -283,7 +245,7 @@ export function AppContent() {
 
   return (
     <div className="min-h-screen bg-white flex text-gray-900 font-sans antialiased overflow-x-hidden">
-      {/* Left Sidebar (Images 2 & 3) */}
+      {/* Left Sidebar */}
       <Sidebar
         user={user}
         activeTab={activeTab}
@@ -306,18 +268,28 @@ export function AppContent() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-white min-h-screen">
-        {/* Scenario 1: Compose New Email View (Image 5) */}
-        {isComposeOpen ? (
-          <ComposeView
-            senders={senders}
-            onBack={() => setIsComposeOpen(false)}
-            onSuccess={() => {
-              setIsComposeOpen(false);
-              loadDashboardData(true);
-            }}
-          />
-        ) : selectedEmail ? (
-          /* Scenario 2: Email Detail Screen (Image 4) */
+        {/* Connection Warning Banner if Backend Offline */}
+        {!backendOnline && (
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between text-xs text-amber-800">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>
+                <strong>Backend Service Offline:</strong> Could not connect to API on port 5000. Ensure <code>npm run dev</code> is running.
+              </span>
+            </div>
+            <button
+              onClick={() => loadDashboardData()}
+              className="flex items-center gap-1 font-semibold text-amber-900 hover:underline cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Main View Area */}
+        {selectedEmail ? (
+          /* Scenario 2: Email Detail Screen */
           <EmailDetailView
             email={selectedEmail.email}
             type={selectedEmail.type}
@@ -341,13 +313,15 @@ export function AppContent() {
             />
           </div>
         ) : (
-          /* Scenario 4: Email Inbox List (Images 2 & 3) */
+          /* Scenario 4: Email Inbox List */
           <div className="flex-1 flex flex-col min-h-0 bg-white">
             <TopSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
               onRefresh={() => loadDashboardData(true)}
               isRefreshing={isRefreshing}
+              searchSource={searchSource}
+              isSearching={isSearching}
             />
 
             <EmailListView
@@ -361,6 +335,19 @@ export function AppContent() {
               isLoading={loading}
             />
           </div>
+        )}
+
+        {/* Floating Gmail-Style Compose Window */}
+        {isComposeOpen && (
+          <ComposeView
+            senders={senders}
+            currentUser={user}
+            onBack={() => setIsComposeOpen(false)}
+            onSuccess={() => {
+              setIsComposeOpen(false);
+              loadDashboardData(true);
+            }}
+          />
         )}
       </main>
 

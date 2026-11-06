@@ -43,7 +43,9 @@ export async function createSender(req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
-    const { type, name, email, host, port, username, password, hourlyLimit = 50 } = req.body;
+    const { type, name, email, host, port, hourlyLimit = 50 } = req.body;
+    const username = req.body.username || req.body.user;
+    const password = req.body.password || req.body.pass;
 
     // Auto-provision real Ethereal account if requested or credentials omitted
     if (type === 'ethereal' || (!host && !password)) {

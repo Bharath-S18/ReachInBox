@@ -1,6 +1,6 @@
 # ReachInbox Email Job Scheduler - Master Progress Checklist
 
-This document tracks all implementation phases and granular subtasks for building the production-grade email scheduler service and dashboard.
+This document tracks all implementation phases, remediation items, and granular subtasks for building the production-grade email scheduler service and dashboard.
 
 ---
 
@@ -12,47 +12,61 @@ This document tracks all implementation phases and granular subtasks for buildin
 - [x] **Phase 5: Multi-Sender SMTP Dispatcher (Ethereal Email)** (4/4 completed)
 - [x] **Phase 6: Elasticsearch Indexing & Full-Text Search** (4/4 completed)
 - [x] **Phase 7: Bull-Board & Express API Endpoints** (7/7 completed)
-- [x] **Phase 8: Frontend Dashboard (Figma-Matched UI)** (10/10 completed)
-- [x] **Phase 9: Testing, Load Simulation & Resilience Verification** (4/4 completed)
-- [ ] **Phase 10: Submission Kit & Documentation** (0/4 completed)
+- [x] **Phase R1: Backend Operationalization & Database Generation** (4/4 completed)
+- [x] **Phase R2: Frontend Real-Data Integration & Gaps Remediation** (6/6 completed)
+- [ ] **Phase R3: End-to-End Live Workflow Verification** (Ready to run)
+- [x] **Phase 10: Submission Kit & Documentation** (4/4 completed)
 
 ---
 
-## 📍 Current Project Milestone & What To Do Further
+## 📍 Actionable Remediation Roadmap
 
-### Where We Are Right Now
-- **Active Feature Branch**: `feat/phase-9-resilience-and-load-tests` (isolated, unmerged to `main`, clean working tree).
-- **Core Engine & Architecture Status**:
-  - **Phases 1–9 are 100% Complete & Verified** (53 of 57 total subtasks passed).
-  - **Live Services Running**:
-    - **Redis 8** (`localhost:6379`): Persistent BullMQ delayed queue storage and atomic sliding-window rate limiting.
-    - **Backend Express Service** (`localhost:5000`): Full REST API, Prisma ORM on Supabase PostgreSQL, BullMQ 5-thread worker with 2,000ms inter-email throttling, and Nodemailer Ethereal SMTP transporter.
-    - **Frontend Vite Client** (`localhost:3000`): Figma/Onebox design, authentic Google OAuth integration (`725831271102-...apps.googleusercontent.com`), email compose drawer with CSV lead ingestion, segmented scheduled/sent tables, and in-app BullMQ telemetry cockpit.
-  - **Resilience Test Suite Verified** (`backend/src/test/resilience.test.ts`):
-    - [x] Server restart resilience across worker shutdown & reboot (Redis ZSET persistence).
-    - [x] Atomic hourly limit enforcement and Slack alert webhook triggering.
-    - [x] Worker concurrency and 2,000ms minimum inter-email delay compliance.
-    - [x] High-volume CSV parsing and ingestion of 1,000 enterprise leads in 4ms with zero memory leaks.
+Based on the comprehensive audit of the backend and frontend codebases, here is the chronological plan to take the project from its current state to a fully functional, connected, verified production build:
 
----
+```mermaid
+flowchart TD
+    R1["Phase R1: Backend Startup & Prisma"] --> R2["Phase R2: Frontend Real-Data Remediation"]
+    R2 --> R3["Phase R3: Live End-to-End Verification"]
+    R3 --> P10["Phase 10: Documentation & Submission Kit"]
+```
 
-### What To Do Further (Phase 10 Execution Roadmap)
-To bring the project to complete, submission-ready status:
+### Phase R1: Backend Operationalization & Prisma Client Generation
+Get the Express backend running cleanly with all dependencies and active database client.
+- [x] **R1.1 Complete Backend Dependency Installation**: Run `npm install` in `backend/` to install missing packages (`cors`, `jsonwebtoken`, `axios`, `csv-parser`, `@prisma/client`).
+- [x] **R1.2 Generate Prisma Client**: Execute `npx prisma generate` to build `.prisma/client` with zero-dependency local SQLite database.
+- [x] **R1.3 Verify Local Redis Connectivity**: Ensure local Redis server (`redis-server.exe` on port 6379) is active and reachable by BullMQ.
+- [x] **R1.4 Start Backend & Verify Health**: Boot Express server (`npm run dev` in `backend/`), verify `GET http://localhost:5000/health` (Redis + DB + Queue status) and `/admin/queues` (Bull-Board).
 
-1. **Subtask 10.1: Comprehensive `README.md`**:
-   - Complete technical architecture breakdown with Mermaid diagrams.
-   - BullMQ persistent delayed queue mechanics explanation.
-   - Distributed hourly rate-limiting design with Redis sliding windows.
-   - Local setup guide (`redis-server`, `npm install`, `npm run dev`).
-2. **Subtask 10.2: Environment Configuration Guide**:
-   - Step-by-step credentials guide for Google Cloud OAuth, Supabase PostgreSQL, Redis, Elasticsearch, and Ethereal SMTP.
-3. **Subtask 10.3: 5-Minute Demo Video Recording Script**:
-   - Chronological, timed checklist for recording the demo video matching all assignment rubric criteria.
-4. **Subtask 10.4: Final Code Review & Merge to `main`**:
-   - Verify TypeScript compiles with 0 errors across both workspaces (`tsc`).
-   - Run unicode regex audit ensuring 0 unwanted emojis across all files.
-   - Confirm zero merge conflicts with `main`.
-   - Merge the verified feature branch into `main` and push to GitHub.
+### Phase R2: Frontend Real-Data Integration & Gaps Remediation
+Eliminate silent fake fallback data and wire the UI directly to real backend API endpoints.
+- [x] **R2.1 Purge Fake Fallback Data in `App.tsx`**:
+  - Remove hardcoded fallback user `"Oliver Brown"` (force authentic login or explicit Demo Architect).
+  - Remove hardcoded fallback stats and mock job arrays (`john.smith`, `sarah.wilson`, etc.).
+  - Add real empty states and a visible backend connection/offline warning banner when API fails.
+- [x] **R2.2 Fix `EmailDetailView.tsx` Dynamic Content**:
+  - Remove hardcoded tennis coaching email body and hardcoded attachments (`Tennis_Coach_Profile.png`).
+  - Render actual subject, sender info, recipient, and body from the selected `EmailJob`.
+  - Display actual Ethereal preview link with one-click opening.
+- [x] **R2.3 Wire Elasticsearch Search to `TopSearchBar.tsx`**:
+  - Connect the top search bar to `emailApi.search(query)` with 350ms debounce.
+  - Display results with indicator showing search source (`ELASTICSEARCH` vs `DATABASE_FALLBACK`).
+- [x] **R2.4 Real BullMQ Queue Telemetry**:
+  - Connect `QueueTelemetryView.tsx` to live backend queue metrics (`/health` and `/api/emails/stats`).
+  - Restyled to light Figma theme; replaced static thread cards with real BullMQ concurrency indicators and live job countdowns.
+- [x] **R2.5 Auto-Refresh / Real-Time Polling**:
+  - Added background polling every 8s to update scheduled/sent counts and statuses automatically.
+- [x] **R2.6 Dead Code & Theme Cleanup**:
+  - Archived legacy unimported dark components outside `src/` to `frontend/legacy/`.
+  - Verified clean TypeScript build (`npm run build` in 4.02s with 0 errors).
+
+### Phase R3: End-to-End Live Workflow Verification
+Execute and verify complete end-to-end user journeys with both frontend and backend running.
+- [ ] **R3.1 Authentication Flow**: Log in via Demo Account or Google OAuth; verify JWT persistence and `GET /api/auth/me`.
+- [ ] **R3.2 Sender Account Setup**: Verify sender list in `SendersModal`, test auto-provisioning an Ethereal SMTP account.
+- [ ] **R3.3 Single & Batch Scheduling**: Compose and schedule an email (with custom delay and hourly limit) and upload a test CSV with multiple leads.
+- [ ] **R3.4 Queue Execution & Ethereal Delivery**: Observe jobs in BullMQ / Bull-Board, verify scheduled-to-sent status transition, and click through to live Ethereal inbox previews.
+- [ ] **R3.5 Hourly Rate Limiting & Slack Alerting**: Send a batch exceeding sender's hourly limit, verify rescheduling to next UTC hour and inspect Slack alert payload.
+- [ ] **R3.6 Full-Text Search Verification**: Search emails by recipient, subject, and body snippet using the search bar; verify accurate results.
 
 ---
 
@@ -158,7 +172,7 @@ To bring the project to complete, submission-ready status:
 ---
 
 ## Phase 10: Submission Kit & Documentation
-- [ ] **10.1 Comprehensive README.md**: Complete documentation of architecture, setup instructions, BullMQ scheduling mechanics, rate-limiting design, and concurrency.
-- [ ] **10.2 Environment Configuration Guide**: Step-by-step instructions for Google OAuth, Slack App, Ethereal, and Docker.
-- [ ] **10.3 5-Minute Demo Video Script**: Step-by-step checklist of flows to record for the demo video.
-- [ ] **10.4 Final Code Review & Cleanup**: Remove debugging logs, verify TypeScript builds with zero errors, and check repository access permissions.
+- [x] **10.1 Comprehensive README.md**: Complete documentation of architecture, setup instructions, BullMQ scheduling mechanics, rate-limiting design, and concurrency.
+- [x] **10.2 Environment Configuration Guide**: Step-by-step instructions for Google OAuth, Slack App, Ethereal, and local Redis / SQLite.
+- [x] **10.3 5-Minute Demo Video Script**: Step-by-step checklist of flows to record for the demo video.
+- [x] **10.4 Final Code Review & Cleanup**: Verified TypeScript builds with zero errors across monorepo (`npm run build`).

@@ -159,12 +159,21 @@ export const senderApi = {
     email: string;
     host: string;
     port: number;
-    user: string;
-    pass: string;
+    user?: string;
+    pass?: string;
+    username?: string;
+    password?: string;
     hourlyLimit?: number;
     name?: string;
   }): Promise<{ sender: SenderAccount }> {
-    const res = await api.post('/api/senders', data);
+    const payload = {
+      ...data,
+      username: data.username || data.user,
+      password: data.password || data.pass,
+      user: data.user || data.username,
+      pass: data.pass || data.password,
+    };
+    const res = await api.post('/api/senders', payload);
     return res.data;
   },
 

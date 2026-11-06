@@ -6,6 +6,16 @@
   color-scheme: light;
 }
 
+::selection {
+  background-color: #c2e7ff !important;
+  color: #041e49 !important;
+}
+
+::-moz-selection {
+  background-color: #c2e7ff !important;
+  color: #041e49 !important;
+}
+
 body {
   margin: 0;
   padding: 0;

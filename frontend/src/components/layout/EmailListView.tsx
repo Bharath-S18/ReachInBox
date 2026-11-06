@@ -205,7 +205,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   title="Open Ethereal Preview"
-                  className="p-1.5 rounded hover:bg-emerald-50 text-gray-400 hover:text-[#00a854] transition flex items-center gap-1 text-xs"
+                  className="p-1.5 rounded hover:bg-blue-50 text-gray-400 hover:text-[#0b57d0] transition flex items-center gap-1 text-xs"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline font-medium">Ethereal</span>

@@ -1,3 +1,13 @@
+export type EmailJobStatus = 'PENDING' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'FAILED' | 'RESCHEDULED';
+export const EmailJobStatus = {
+  PENDING: 'PENDING',
+  SCHEDULED: 'SCHEDULED',
+  SENDING: 'SENDING',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+  RESCHEDULED: 'RESCHEDULED',
+} as const;
+
 export interface EmailJobPayload {
   jobId: string; // Corresponds to EmailJob.id in Prisma DB
   idempotencyKey: string;

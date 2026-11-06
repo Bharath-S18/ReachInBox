@@ -144,7 +144,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 placeholder="Full Name"
-                className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a854] transition"
+                className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
               />
             </div>
           )}
@@ -156,7 +156,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               onChange={(e) => setEmailInput(e.target.value)}
               placeholder="Email ID"
               required
-              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a854] transition"
+              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
             />
           </div>
 
@@ -166,14 +166,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
               placeholder="Password"
-              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00a854] transition"
+              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3.5 px-4 rounded-xl bg-[#00a854] hover:bg-[#009249] text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="w-full mt-2 py-3.5 px-4 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
             {loading ? 'Authenticating...' : isSignUp ? 'Create Account' : 'Login'}
           </button>
@@ -189,7 +189,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 setIsSignUp(!isSignUp);
                 setErrorMsg(null);
               }}
-              className="font-semibold text-[#00a854] hover:underline cursor-pointer ml-1"
+              className="font-semibold text-[#0b57d0] hover:underline cursor-pointer ml-1"
             >
               {isSignUp ? 'Log In' : 'Sign Up'}
             </button>

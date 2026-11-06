@@ -1,7 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
 import { esClient, checkElasticsearchHealth } from '../config/elasticsearch.js';
 import { prisma } from '../lib/prisma.js';
-import { EmailJobStatus } from '@prisma/client';
+import { EmailJobStatus } from '../types/queue.types.js';
 
 export const EMAILS_INDEX_NAME = process.env.ELASTICSEARCH_INDEX || 'emails';
 
@@ -324,9 +324,9 @@ export class ElasticsearchService {
     if (query && query.trim() !== '') {
       const q = query.trim();
       whereClause.OR = [
-        { recipientEmail: { contains: q, mode: 'insensitive' } },
-        { subject: { contains: q, mode: 'insensitive' } },
-        { body: { contains: q, mode: 'insensitive' } },
+        { recipientEmail: { contains: q } },
+        { subject: { contains: q } },
+        { body: { contains: q } },
       ];
     }
 

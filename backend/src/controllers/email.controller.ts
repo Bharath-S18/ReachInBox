@@ -5,7 +5,7 @@ import { ElasticsearchService } from '../services/elasticsearch.service.js';
 import { SmtpService } from '../services/smtp.service.js';
 import { parseAndValidateLeadEmails } from '../lib/csvParser.js';
 import { AuthenticatedRequest } from '../middleware/auth.middleware.js';
-import { EmailJobStatus } from '@prisma/client';
+import { EmailJobStatus } from '../types/queue.types.js';
 
 /**
  * POST /api/emails/schedule

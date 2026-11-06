@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Geometric bold ONB mark */}
           <div className="flex items-center tracking-tighter font-black text-2xl text-black">
             <span>ON</span>
-            <span className="text-[#00a854]">B</span>
+            <span className="text-[#0b57d0]">B</span>
           </div>
           <span className="text-[10px] font-semibold tracking-wider uppercase text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
             ReachInbox
@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               className="w-full px-3.5 py-2 flex items-center gap-2.5 hover:bg-gray-50 text-left font-medium"
             >
-              <Mail className="w-3.5 h-3.5 text-emerald-600" />
+              <Mail className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Outbound SMTP Senders</span>
             </button>
             <button
@@ -133,11 +133,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Primary Compose Action - Green outline pill button */}
+      {/* Primary Compose Action - Blue outline pill button */}
       <div className="mb-6">
         <button
           onClick={onOpenCompose}
-          className="w-full py-2.5 px-4 rounded-full border border-[#00a854] text-[#00a854] hover:bg-[#00a854] hover:text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
+          className="w-full py-2.5 px-4 rounded-full border border-[#0b57d0] text-[#0b57d0] hover:bg-[#0b57d0] hover:text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Compose</span>
@@ -155,14 +155,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onTabChange('scheduled')}
           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
             activeTab === 'scheduled'
-              ? 'bg-[#e8f5e9] text-gray-900 font-semibold'
+              ? 'bg-[#d3e3fd]/50 text-[#041e49] font-semibold'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
           <div className="flex items-center gap-3">
             <Clock
               className={`w-4 h-4 ${
-                activeTab === 'scheduled' ? 'text-[#00a854]' : 'text-gray-400'
+                activeTab === 'scheduled' ? 'text-[#0b57d0]' : 'text-gray-400'
               }`}
             />
             <span>Scheduled</span>
@@ -170,7 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span
             className={`text-xs px-2 py-0.5 rounded-full font-medium ${
               activeTab === 'scheduled'
-                ? 'text-[#00a854] font-bold'
+                ? 'text-[#0b57d0] font-bold bg-[#d3e3fd]/60'
                 : 'text-gray-400'
             }`}
           >
@@ -183,14 +183,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onTabChange('sent')}
           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
             activeTab === 'sent'
-              ? 'bg-[#e8f5e9] text-gray-900 font-semibold'
+              ? 'bg-[#d3e3fd]/50 text-[#041e49] font-semibold'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
           }`}
         >
           <div className="flex items-center gap-3">
             <Send
               className={`w-4 h-4 ${
-                activeTab === 'sent' ? 'text-[#00a854]' : 'text-gray-400'
+                activeTab === 'sent' ? 'text-[#0b57d0]' : 'text-gray-400'
               }`}
             />
             <span>Sent</span>
@@ -198,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span
             className={`text-xs px-2 py-0.5 rounded-full font-medium ${
               activeTab === 'sent'
-                ? 'text-[#00a854] font-bold'
+                ? 'text-[#0b57d0] font-bold bg-[#d3e3fd]/60'
                 : 'text-gray-400'
             }`}
           >
@@ -213,15 +213,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onTabChange('telemetry')}
           className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
             activeTab === 'telemetry'
-              ? 'bg-blue-50 text-blue-700 font-semibold'
+              ? 'bg-blue-50 text-[#0b57d0] font-semibold'
               : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <Radio className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
+            <Radio className="w-3.5 h-3.5 text-[#0b57d0] animate-pulse" />
             <span>BullMQ Telemetry</span>
           </div>
-          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Live</span>
+          <span className="text-[10px] bg-blue-100 text-[#0b57d0] px-1.5 py-0.5 rounded font-semibold">Live</span>
+        </button>
+
+        <button
+          onClick={onOpenSenders}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition"
+        >
+          <div className="flex items-center gap-2.5">
+            <Mail className="w-3.5 h-3.5 text-[#0b57d0]" />
+            <span>SMTP Senders</span>
+          </div>
+          <span className="text-[10px] bg-blue-50 text-[#0b57d0] px-1.5 py-0.5 rounded font-medium">Manage</span>
         </button>
 
         <button
@@ -233,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Slack #alerts</span>
           </div>
           {slackConnected ? (
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-[#0b57d0]" />
           ) : (
             <span className="text-[10px] text-gray-400">Link</span>
           )}

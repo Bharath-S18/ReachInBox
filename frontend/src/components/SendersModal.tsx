@@ -38,6 +38,8 @@ export const SendersModal: React.FC<SendersModalProps> = ({
         port: Number(port),
         user,
         pass,
+        username: user,
+        password: pass,
         hourlyLimit: Number(hourlyLimit),
         name: name || undefined,
       });
@@ -70,7 +72,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-[#00a854]">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-2.5 text-[#0b57d0]">
               <Mail className="h-5 w-5" />
             </div>
             <div>
@@ -101,7 +103,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
               {!showAddForm && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="flex items-center gap-1.5 rounded-full border border-[#00a854] bg-[#e8f5e9] px-3 py-1 text-xs font-semibold text-[#00a854] hover:bg-[#dcedc8] transition"
+                  className="flex items-center gap-1.5 rounded-full border border-[#0b57d0] bg-blue-50 px-3 py-1 text-xs font-semibold text-[#0b57d0] hover:bg-[#d3e3fd] transition"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add SMTP Account</span>
@@ -116,7 +118,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                   className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#f9fafb] p-3.5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-2 w-2 rounded-full bg-[#00a854]" />
+                    <div className="h-2 w-2 rounded-full bg-[#0b57d0]" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900 truncate">
@@ -174,7 +176,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     placeholder="e.g. Outreach Team"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
                 <div>
@@ -185,7 +187,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     placeholder="user@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
               </div>
@@ -198,7 +200,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     required
                     value={host}
                     onChange={(e) => setHost(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
                 <div>
@@ -208,7 +210,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     required
                     value={port}
                     onChange={(e) => setPort(Number(e.target.value))}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
               </div>
@@ -221,7 +223,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     required
                     value={user}
                     onChange={(e) => setUser(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
                 <div>
@@ -231,7 +233,7 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                     required
                     value={pass}
                     onChange={(e) => setPass(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                   />
                 </div>
               </div>
@@ -244,14 +246,14 @@ export const SendersModal: React.FC<SendersModalProps> = ({
                   required
                   value={hourlyLimit}
                   onChange={(e) => setHourlyLimit(Number(e.target.value))}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#00a854]"
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#0b57d0]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#00a854] hover:bg-[#009249] text-white text-xs font-semibold transition shadow-sm disabled:opacity-50"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold transition shadow-sm disabled:opacity-50"
               >
                 {isSubmitting ? 'Verifying & Saving...' : 'Save Transporter'}
               </button>
