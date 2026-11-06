@@ -41,14 +41,25 @@ export async function scheduleEmails(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
-    // 1. Parse and validate recipient emails
-    const rawInput = recipients || csvContent;
-    if (!rawInput) {
+    // 1. Parse and validate recipient emails (from manual input, CSV content, or both)
+    const rawInputs: string[] = [];
+    if (recipients) {
+      if (Array.isArray(recipients)) {
+        rawInputs.push(...recipients);
+      } else if (typeof recipients === 'string' && recipients.trim()) {
+        rawInputs.push(recipients.trim());
+      }
+    }
+    if (csvContent && typeof csvContent === 'string' && csvContent.trim()) {
+      rawInputs.push(csvContent.trim());
+    }
+
+    if (rawInputs.length === 0) {
       res.status(400).json({ success: false, error: 'Recipients list or CSV content is required' });
       return;
     }
 
-    const { validEmails, totalParsed, invalidCount } = parseAndValidateLeadEmails(rawInput);
+    const { validEmails, totalParsed, invalidCount } = parseAndValidateLeadEmails(rawInputs);
     if (validEmails.length === 0) {
       res.status(400).json({
         success: false,

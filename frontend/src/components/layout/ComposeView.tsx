@@ -181,6 +181,7 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvContent, setCsvContent] = useState<string>('');
   const [parsedLeadCount, setParsedLeadCount] = useState<number>(0);
 
   // Submitting state
@@ -435,12 +436,14 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
       setCsvFile(csv);
       const reader = new FileReader();
       reader.onload = (event) => {
-        const text = event.target?.result as string;
-        if (!text) return;
+        const text = (event.target?.result as string) || '';
+        setCsvContent(text);
         const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
         const unique = Array.from(new Set(emails));
         setParsedLeadCount(unique.length);
-        addRecipientsFromText(unique.join(', '), setRecipients, setToInputValue);
+        if (unique.length > 0 && unique.length <= 10) {
+          addRecipientsFromText(unique.join(', '), setRecipients, setToInputValue);
+        }
       };
       reader.readAsText(csv);
     }
@@ -449,6 +452,12 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
   };
 
   const removeFile = (index: number) => {
+    const fileToRemove = attachedFiles[index];
+    if (fileToRemove && (fileToRemove.name.endsWith('.csv') || fileToRemove.name.endsWith('.txt'))) {
+      setCsvFile(null);
+      setCsvContent('');
+      setParsedLeadCount(0);
+    }
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -471,8 +480,8 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
     ];
     const combinedTo = allTo.join(', ');
 
-    if (!combinedTo && !csvFile) {
-      setErrorMsg('Please enter at least one recipient email address');
+    if (!combinedTo && !csvContent && !csvFile) {
+      setErrorMsg('Please enter at least one recipient email address or attach a CSV leads list');
       return;
     }
 
@@ -480,29 +489,16 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
     setErrorMsg(null);
 
     try {
-      if (csvFile) {
-        const formData = new FormData();
-        formData.append('file', csvFile);
-        formData.append('subject', subject.trim());
-        formData.append('body', currentEditorContent);
-        formData.append('interEmailDelayMs', String(delaySec * 1000));
-        formData.append('hourlyLimit', String(hourlyLimit));
-        if (combinedTo) formData.append('recipients', combinedTo);
-        if (senderId) formData.append('senderId', senderId);
-        if (scheduledAt) formData.append('startTime', new Date(scheduledAt).toISOString());
-
-        await emailApi.schedule(formData);
-      } else {
-        await emailApi.schedule({
-          subject: subject.trim(),
-          body: currentEditorContent,
-          recipients: combinedTo,
-          interEmailDelayMs: delaySec * 1000,
-          hourlyLimit,
-          senderId: senderId || undefined,
-          startTime: scheduledAt ? new Date(scheduledAt).toISOString() : new Date().toISOString(),
-        });
-      }
+      await emailApi.schedule({
+        subject: subject.trim(),
+        body: currentEditorContent,
+        recipients: combinedTo || undefined,
+        csvContent: csvContent || undefined,
+        interEmailDelayMs: delaySec * 1000,
+        hourlyLimit,
+        senderId: senderId || undefined,
+        startTime: scheduledAt ? new Date(scheduledAt).toISOString() : new Date().toISOString(),
+      });
 
       try {
         localStorage.removeItem('reachinbox_draft_v1');
@@ -892,22 +888,41 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
         {/* Attached Files Chips */}
         {attachedFiles.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 mt-2">
-            {attachedFiles.map((file, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200/70 border border-gray-200 px-2.5 py-1 rounded-full text-xs text-gray-700"
-              >
-                <Paperclip className="w-3 h-3 text-gray-500" />
-                <span className="max-w-[140px] truncate">{file.name}</span>
-                <button
-                  type="button"
-                  onClick={() => removeFile(idx)}
-                  className="hover:text-[#0b57d0] ml-0.5"
+            {attachedFiles.map((file, idx) => {
+              const isCsv = file.name.endsWith('.csv') || file.name.endsWith('.txt');
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center gap-1.5 border px-2.5 py-1 rounded-full text-xs ${
+                    isCsv
+                      ? 'bg-blue-50/80 hover:bg-blue-100/70 border-blue-200 text-[#0b57d0]'
+                      : 'bg-gray-100 hover:bg-gray-200/70 border-gray-200 text-gray-700'
+                  }`}
                 >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+                  {isCsv ? (
+                    <span className="text-[10px] font-bold bg-[#0b57d0] text-white px-1.5 py-0.5 rounded">
+                      CSV
+                    </span>
+                  ) : (
+                    <Paperclip className="w-3 h-3 text-gray-500" />
+                  )}
+                  <span className="max-w-[160px] truncate font-medium">{file.name}</span>
+                  {isCsv && parsedLeadCount > 0 && (
+                    <span className="text-[11px] text-[#0b57d0] font-semibold">
+                      ({parsedLeadCount} leads)
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeFile(idx)}
+                    className="hover:text-red-500 ml-0.5 text-gray-400 hover:text-gray-700"
+                    title="Remove attachment"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

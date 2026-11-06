@@ -142,7 +142,8 @@ export const emailApi = {
   async schedule(payload: FormData | {
     subject: string;
     body: string;
-    recipients: string;
+    recipients?: string;
+    csvContent?: string;
     startTime?: string;
     scheduledAt?: string;
     interEmailDelayMs?: number;
