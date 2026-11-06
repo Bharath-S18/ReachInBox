@@ -3,6 +3,7 @@ import { emailQueue, enqueueEmailJob, getQueueStats } from '../queues/email.queu
 import { emailWorker, setRateLimitAlertHandler } from '../queues/email.worker.js';
 import { checkRateLimit, incrementRateLimit, getHourlyWindowKey } from '../services/rateLimiter.service.js';
 import { prisma } from '../lib/prisma.js';
+import { SmtpService } from '../services/smtp.service.js';
 
 async function runPhase3Verification() {
   console.log(' Starting Phase 3 (BullMQ & Rate Limiting) Verification Suite...\n');
@@ -53,20 +54,16 @@ async function runPhase3Verification() {
     },
   });
 
-  const sender = await prisma.senderAccount.upsert({
-    where: { id: 'phase3-test-sender' },
-    update: {},
-    create: {
-      id: 'phase3-test-sender',
-      userId: user.id,
-      name: 'Test Sender',
-      email: 'sender@phase3.local',
-      host: 'smtp.ethereal.email',
-      port: 587,
-      username: 'sender@phase3.local',
-      password: 'password',
-      hourlyLimit: 1, // Set to 1 to test rate-limit & rescheduling immediately!
-    },
+  let sender = await prisma.senderAccount.findFirst({
+    where: { userId: user.id },
+  });
+  if (!sender || sender.password === 'password') {
+    sender = await SmtpService.provisionEtherealAccount(user.id, 'Test Sender');
+  }
+  // Set hourly limit to 1 to test rate-limit & rescheduling immediately!
+  await prisma.senderAccount.update({
+    where: { id: sender.id },
+    data: { hourlyLimit: 1 },
   });
 
   // Clean rate limit key for this sender
@@ -105,8 +102,11 @@ async function runPhase3Verification() {
   });
 
   // Wait for Job 1 to complete
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-  const completedJob1 = await prisma.emailJob.findUnique({ where: { id: job1Id } });
+  let completedJob1 = await prisma.emailJob.findUnique({ where: { id: job1Id } });
+  for (let attempt = 0; attempt < 8 && (!completedJob1 || completedJob1.status === 'SENDING' || completedJob1.status === 'SCHEDULED'); attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    completedJob1 = await prisma.emailJob.findUnique({ where: { id: job1Id } });
+  }
   console.log(`   Job 1 DB Status: ${completedJob1?.status}`);
   if (completedJob1?.status !== 'SENT') {
     throw new Error(`Job 1 should be SENT, got ${completedJob1?.status}`);

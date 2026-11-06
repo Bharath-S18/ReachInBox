@@ -17,7 +17,6 @@ import {
   CheckSquare,
   Square,
   MinusSquare,
-  RotateCw,
 } from 'lucide-react';
 import { ScheduledEmailJob, SentEmailJob } from '../../types';
 
@@ -48,7 +47,6 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   onSelectEmail,
   onCancelScheduled,
   onDeleteSelected,
-  onRefresh,
   isLoading,
   highlightQuery = '',
   currentPage = 1,
@@ -280,7 +278,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           </div>
 
           {/* Action icons when items are selected */}
-          {selectedIds.size > 0 ? (
+          {selectedIds.size > 0 && (
             <div className="flex items-center gap-1 ml-2 animate-in fade-in duration-100">
               <button
                 className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
@@ -319,24 +317,6 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                 title="More"
               >
                 <MoreVertical className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 ml-1">
-              {onRefresh && (
-                <button
-                  onClick={onRefresh}
-                  className="p-1.5 rounded hover:bg-gray-100 transition text-gray-500 hover:text-gray-800"
-                  title="Refresh"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-500 hover:text-gray-800"
-                title="More options"
-              >
-                <MoreVertical className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
