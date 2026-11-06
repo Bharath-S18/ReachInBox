@@ -18,7 +18,9 @@ This document tracks all implementation phases, remediation items, and granular 
 - [x] **Phase 8: Frontend Dashboard & Outreach Engine** (10/10 completed)
 - [x] **Phase 9: Testing, Load Simulation & Resilience Verification** (4/4 completed)
 - [x] **Phase 10: Submission Kit & Documentation** (4/4 completed)
-- [x] **Phase 11: Gmail-Style Compose & Advanced Inbox Experience** (10/10 completed)
+- [x] **Phase 11: Gmail-Style Compose & Advanced Inbox Experience** (8/8 completed)
+- [x] **Phase 12: Deployment Readiness & Production Containerization** (4/4 completed)
+- [x] **Phase 13: CSV Lead Ingestion Audit & Remediation** (4/4 completed)
 
 ---
 
@@ -217,3 +219,35 @@ Execute and verify complete end-to-end user journeys with both frontend and back
 - [x] **11.8 Unified Design Theme**:
   - Entire frontend transitioned from emerald green to the unified Google Blue palette (`#0b57d0`, `#d3e3fd`, `#041e49`).
   - Verified and styled across Sidebar, TopSearchBar, Compose, List Views, Detail Views, and Modals.
+
+---
+
+## Phase 12: Deployment Readiness & Production Containerization
+- [x] **12.1 Backend Multi-Stage Dockerfile**:
+  - Node 20 Alpine builder generating Prisma Client, running TypeScript compilation, and runner with production dependencies (`--omit=dev`).
+  - Container health checks and port 5000 exposure.
+- [x] **12.2 Frontend Nginx Dockerfile**:
+  - Node 20 Alpine builder generating optimized Vite production bundles (`dist/`).
+  - Nginx Alpine runner with SPA fallback configuration (`try_files $uri $uri/ /index.html;`) on port 80.
+- [x] **12.3 Full Stack Orchestration (`docker-compose.yml`)**:
+  - Unified stack connecting `postgres`, `redis`, `elasticsearch`, `backend`, and `frontend`.
+  - Service dependencies with health check barriers (`service_healthy`).
+- [x] **12.4 Dynamic Environment API Configuration**:
+  - Added `VITE_API_URL` environment fallback in `api.ts` to support cloud hosting platforms (e.g., Vercel / Netlify frontend pointing to Railway / Render backend).
+
+---
+
+## Phase 13: CSV Lead Ingestion Audit & Remediation
+- [x] **13.1 Multipart vs. JSON Payload Resolution**:
+  - **Identified Gap**: `ComposeView` was wrapping CSV lead files in `FormData` with `multipart/form-data`, but the Express backend uses `express.json()` without `multer`, causing `req.body` to arrive empty and throwing `400: Subject is required`.
+  - **Resolution**: Streamlined client `FileReader` to extract raw CSV string and transmit clean JSON payload `{ subject, body, recipients, csvContent, ... }` via `emailApi.schedule`.
+- [x] **13.2 Unified Recipient & CSV Merging in Controller**:
+  - Replaced exclusive OR `recipients || csvContent` in `email.controller.ts` with array aggregation `rawInputs = [...recipients, csvContent]`.
+  - Both manually typed email addresses and attached CSV lead lists are merged, sanitized, deduplicated, and scheduled together in a single campaign.
+- [x] **13.3 DOM Virtualization / Performance Protection**:
+  - Added threshold limiting chip rendering to lists $\le$ 10 recipients to prevent DOM thrashing when uploading large CSV lists (e.g. 500-1000 leads).
+  - Displays a clean, reactive `X Leads` count pill in the header and an informative `[CSV] filename.csv (X leads)` attachment badge.
+- [x] **13.4 Attachment Lifecycle & State Cleanup**:
+  - Linked attachment removal button (`✕`) to synchronously clear `csvFile`, `csvContent`, and `parsedLeadCount` state.
+  - Verified parser unit tests with headers, missing fields, duplicate entries, and invalid syntax.
+  - *(Note: Saved for user review / further live manual validation)*.
