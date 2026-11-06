@@ -70,9 +70,7 @@ function createRecipientChip(
     email = angleMatch[2].trim();
   } else if (trimmed.includes('@')) {
     email = trimmed;
-    const prefix = trimmed.split('@')[0];
-    const cleanPrefix = prefix.split(/[._-]/)[0];
-    name = cleanPrefix.charAt(0).toUpperCase() + cleanPrefix.slice(1);
+    name = trimmed; // Retain full email so the user's email address is never stripped or hidden
   } else {
     // User typed a name or keyword without '@' (e.g. "Bharath" or "me")
     const lower = trimmed.toLowerCase();
@@ -105,7 +103,9 @@ function createRecipientChip(
     return null;
   }
 
-  const avatarLetter = (name || email || 'U').charAt(0).toUpperCase();
+  // Derive initial letter (e.g. 'B' from 'bharath.s06101968@gmail.com')
+  const initialSource = (name && name !== email) ? name : email;
+  const avatarLetter = (initialSource || 'U').charAt(0).toUpperCase();
   const avatarColor = getAvatarColor(email || name);
 
   return {
@@ -406,6 +406,7 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
         formData.append('body', currentEditorContent);
         formData.append('interEmailDelayMs', String(delaySec * 1000));
         formData.append('hourlyLimit', String(hourlyLimit));
+        if (combinedTo) formData.append('recipients', combinedTo);
         if (senderId) formData.append('senderId', senderId);
         if (scheduledAt) formData.append('startTime', new Date(scheduledAt).toISOString());
 
@@ -555,8 +556,8 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
               >
                 {chip.avatarLetter}
               </div>
-              <span className="font-medium text-gray-900 truncate max-w-[180px] sm:max-w-[240px]">
-                {chip.name || chip.email}
+              <span className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-[300px]" title={chip.email}>
+                {chip.name && chip.name !== chip.email ? `${chip.name} <${chip.email}>` : chip.email}
               </span>
               <button
                 type="button"
@@ -653,8 +654,8 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
                 >
                   {chip.avatarLetter}
                 </div>
-                <span className="font-medium text-gray-900 truncate max-w-[160px]">
-                  {chip.name || chip.email}
+                <span className="font-medium text-gray-900 truncate max-w-[200px]" title={chip.email}>
+                  {chip.name && chip.name !== chip.email ? `${chip.name} <${chip.email}>` : chip.email}
                 </span>
                 <button
                   type="button"
@@ -723,8 +724,8 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
                 >
                   {chip.avatarLetter}
                 </div>
-                <span className="font-medium text-gray-900 truncate max-w-[160px]">
-                  {chip.name || chip.email}
+                <span className="font-medium text-gray-900 truncate max-w-[200px]" title={chip.email}>
+                  {chip.name && chip.name !== chip.email ? `${chip.name} <${chip.email}>` : chip.email}
                 </span>
                 <button
                   type="button"

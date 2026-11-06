@@ -38,10 +38,12 @@ export function parseAndValidateLeadEmails(input: string | string[]): ParseLeads
       const cells = line.split(/[,;\t]+/).map((c) => c.replace(/^["']|["']$/g, '').trim());
 
       // Check header line for email column on first non-empty line
+      // Only treat as header if the row does NOT contain an actual email address
       if (!headerProcessed) {
         headerProcessed = true;
-        if (cells.some((c) => /email|mail|recipient/i.test(c))) {
-          emailColumnIndex = cells.findIndex((c) => /email|mail|recipient/i.test(c));
+        const hasEmailInRow = cells.some((c) => c.includes('@'));
+        if (!hasEmailInRow && cells.some((c) => /^(email|e-mail|mail|recipient|recipients|to|lead_email)$/i.test(c))) {
+          emailColumnIndex = cells.findIndex((c) => /^(email|e-mail|mail|recipient|recipients|to|lead_email)$/i.test(c));
           continue;
         }
       }
