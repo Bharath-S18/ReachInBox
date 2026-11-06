@@ -342,9 +342,8 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       onSortModeChange?.('relevant');
                       setSortDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center justify-between ${
-                      sortMode === 'relevant' ? 'font-bold text-[#0b57d0]' : ''
-                    }`}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center justify-between ${sortMode === 'relevant' ? 'font-bold text-[#0b57d0]' : ''
+                      }`}
                   >
                     <span>Most relevant</span>
                     {sortMode === 'relevant' && <span>✓</span>}
@@ -354,9 +353,8 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       onSortModeChange?.('recent');
                       setSortDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center justify-between ${
-                      sortMode === 'recent' ? 'font-bold text-[#0b57d0]' : ''
-                    }`}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-gray-50 flex items-center justify-between ${sortMode === 'recent' ? 'font-bold text-[#0b57d0]' : ''
+                      }`}
                   >
                     <span>Most recent</span>
                     {sortMode === 'recent' && <span>✓</span>}
@@ -424,15 +422,15 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
             {type === 'search'
               ? 'No matching emails found'
               : type === 'scheduled'
-              ? 'No scheduled emails'
-              : 'No sent emails yet'}
+                ? 'No scheduled emails'
+                : 'No sent emails yet'}
           </h3>
           <p className="text-xs text-gray-400 mt-1 max-w-sm">
             {type === 'search'
               ? 'Try searching with another keyword, recipient address, or subject line.'
               : type === 'scheduled'
-              ? 'Click "Compose" to schedule outreach campaigns with automated queue delivery.'
-              : 'Delivered emails with Ethereal SMTP live preview links will appear here.'}
+                ? 'Click "Compose" to schedule outreach campaigns with automated queue delivery.'
+                : 'Delivered emails with Ethereal SMTP live preview links will appear here.'}
           </p>
         </div>
       )}
@@ -452,11 +450,10 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
             <div
               key={job.id}
               onClick={() => onSelectEmail(job, type)}
-              className={`flex items-center px-3 sm:px-4 py-2 cursor-pointer transition-colors group text-sm select-none border-b border-gray-100 ${
-                isSelected
+              className={`flex items-center px-3 sm:px-4 py-2 cursor-pointer transition-colors group text-sm select-none border-b border-gray-100 ${isSelected
                   ? 'bg-[#c2e7ff] hover:bg-[#b3dcfb] border-b-blue-100'
                   : 'bg-white hover:bg-[#f2f6fc] hover:shadow-xs'
-              }`}
+                }`}
             >
               {/* Left Column: Drag handle + Checkbox + Star */}
               <div className="flex items-center gap-1 sm:gap-2 shrink-0 mr-3">
@@ -486,18 +483,16 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                   title={isStarred ? 'Starred' : 'Not starred'}
                 >
                   <Star
-                    className={`w-4 h-4 ${
-                      isStarred ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
-                    }`}
+                    className={`w-4 h-4 ${isStarred ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                      }`}
                   />
                 </button>
               </div>
 
               {/* Sender / Recipient Column */}
               <div
-                className={`w-36 sm:w-48 shrink-0 truncate pr-2 text-sm ${
-                  isSelected ? 'font-semibold text-[#041e49]' : 'font-semibold text-gray-900'
-                }`}
+                className={`w-36 sm:w-48 shrink-0 truncate pr-2 text-sm ${isSelected ? 'font-semibold text-[#041e49]' : 'font-semibold text-gray-900'
+                  }`}
               >
                 {type === 'scheduled' ? `To: ${recipientName}` : recipientName}
               </div>
@@ -511,14 +506,13 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       ? 'Sent'
                       : 'Scheduled'
                     : type === 'scheduled'
-                    ? 'Scheduled'
-                    : 'Sent'}
+                      ? 'Scheduled'
+                      : 'Sent'}
                 </span>
 
                 <span
-                  className={`font-semibold shrink-0 max-w-[280px] sm:max-w-[400px] truncate ${
-                    isSelected ? 'text-[#041e49]' : 'text-gray-900'
-                  }`}
+                  className={`font-semibold shrink-0 max-w-[280px] sm:max-w-[400px] truncate ${isSelected ? 'text-[#041e49]' : 'text-gray-900'
+                    }`}
                 >
                   {renderHighlighted(job.subject || '(no subject)', highlightQuery)}
                 </span>
@@ -540,9 +534,8 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
               <div className="shrink-0 flex items-center justify-end min-w-[90px] relative">
                 {/* Default: Date/Time (e.g. 09:13, 22 Oct, 2 Nov) */}
                 <span
-                  className={`text-xs font-medium group-hover:hidden ${
-                    isSelected ? 'text-[#041e49] font-bold' : 'text-gray-500'
-                  }`}
+                  className={`text-xs font-medium group-hover:hidden ${isSelected ? 'text-[#041e49] font-bold' : 'text-gray-500'
+                    }`}
                 >
                   {timeLabel}
                 </span>
