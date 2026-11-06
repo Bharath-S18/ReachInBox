@@ -198,6 +198,25 @@ export function AppContent() {
     }
   };
 
+  const handleDeleteSelected = async (ids: string[]) => {
+    try {
+      await emailApi.batchDelete(ids);
+      setScheduledJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      setSentJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      if (selectedEmail && ids.includes(selectedEmail.email.id)) {
+        setSelectedEmail(null);
+      }
+      loadDashboardData(true);
+    } catch (err: any) {
+      console.error('Batch delete error:', err);
+      setScheduledJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      setSentJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      if (selectedEmail && ids.includes(selectedEmail.email.id)) {
+        setSelectedEmail(null);
+      }
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -332,6 +351,8 @@ export function AppContent() {
                 setSelectedEmail({ email, type });
               }}
               onCancelScheduled={handleCancelScheduled}
+              onDeleteSelected={handleDeleteSelected}
+              onRefresh={() => loadDashboardData(true)}
               isLoading={loading}
             />
           </div>

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { enqueueEmailJob } from '../queues/email.queue.js';
+import { enqueueEmailJob, emailQueue } from '../queues/email.queue.js';
 import { ElasticsearchService } from '../services/elasticsearch.service.js';
 import { SmtpService } from '../services/smtp.service.js';
 import { parseAndValidateLeadEmails } from '../lib/csvParser.js';
@@ -321,6 +321,101 @@ export async function getEmailStats(req: AuthenticatedRequest, res: Response): P
     });
   } catch (error: any) {
     console.error('Error fetching stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * DELETE /api/emails/scheduled/:id or DELETE /api/emails/:id
+ * Delete/Cancel an email job from database, Elasticsearch, and BullMQ queue
+ */
+export async function deleteEmailJob(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    const id = req.params.id as string;
+
+    if (!id) {
+      res.status(400).json({ success: false, error: 'Job ID is required' });
+      return;
+    }
+
+    const job = await prisma.emailJob.findFirst({
+      where: { id, ...(userId ? { userId } : {}) },
+    });
+
+    if (!job) {
+      res.status(404).json({ success: false, error: 'Email job not found' });
+      return;
+    }
+
+    // Attempt to remove job from BullMQ queue using idempotencyKey (which is the BullMQ jobId)
+    const bullId = job.idempotencyKey;
+    if (bullId) {
+      try {
+        const bullJob = await emailQueue.getJob(bullId);
+        if (bullJob) {
+          await bullJob.remove();
+        }
+      } catch (qErr) {
+        // queue remove failure is non-blocking
+      }
+    }
+
+    // Delete from PostgreSQL
+    await prisma.emailJob.delete({ where: { id: job.id } });
+
+    // Delete from Elasticsearch if index exists
+    try {
+      await ElasticsearchService.deleteEmailJob(job.id);
+    } catch {}
+
+    res.json({ success: true, message: 'Email deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting email job:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+/**
+ * POST /api/emails/batch-delete
+ * Delete multiple email jobs from database and BullMQ queue
+ */
+export async function batchDeleteEmailJobs(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ success: false, error: 'Array of job IDs is required' });
+      return;
+    }
+
+    const stringIds = ids.filter((i): i is string => typeof i === 'string');
+
+    const jobs = await prisma.emailJob.findMany({
+      where: { id: { in: stringIds }, ...(userId ? { userId } : {}) },
+    });
+
+    for (const job of jobs) {
+      const bullId = job.idempotencyKey;
+      if (bullId) {
+        try {
+          const bullJob = await emailQueue.getJob(bullId);
+          if (bullJob) await bullJob.remove();
+        } catch {}
+      }
+      try {
+        await ElasticsearchService.deleteEmailJob(job.id);
+      } catch {}
+    }
+
+    const deleteResult = await prisma.emailJob.deleteMany({
+      where: { id: { in: jobs.map((j) => j.id) } },
+    });
+
+    res.json({ success: true, deletedCount: deleteResult.count });
+  } catch (error: any) {
+    console.error('Error in batch delete:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 }

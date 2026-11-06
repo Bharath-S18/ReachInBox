@@ -146,6 +146,11 @@ export const emailApi = {
     const res = await api.delete(`/api/emails/scheduled/${id}`);
     return res.data;
   },
+
+  async batchDelete(ids: string[]): Promise<{ success: boolean; deletedCount: number }> {
+    const res = await api.post('/api/emails/batch-delete', { ids });
+    return res.data;
+  },
 };
 
 export const senderApi = {

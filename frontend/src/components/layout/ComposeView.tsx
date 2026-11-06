@@ -187,6 +187,87 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Draft auto-save state
+  const [draftStatus, setDraftStatus] = useState<'saved' | 'saving' | ''>('');
+
+  // Rehydrate draft from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('reachinbox_draft_v1');
+      if (stored) {
+        const d = JSON.parse(stored);
+        if (d.recipients && Array.isArray(d.recipients) && d.recipients.length > 0) {
+          setRecipients(d.recipients);
+        }
+        if (d.ccRecipients && Array.isArray(d.ccRecipients) && d.ccRecipients.length > 0) {
+          setCcRecipients(d.ccRecipients);
+          setShowCc(true);
+        }
+        if (d.bccRecipients && Array.isArray(d.bccRecipients) && d.bccRecipients.length > 0) {
+          setBccRecipients(d.bccRecipients);
+          setShowBcc(true);
+        }
+        if (d.subject) {
+          setSubject(d.subject);
+        }
+        if (d.bodyHtml) {
+          bodyHtmlRef.current = d.bodyHtml;
+          if (editorRef.current) {
+            editorRef.current.innerHTML = d.bodyHtml;
+          }
+        }
+        if (d.scheduledAt) {
+          setScheduledAt(d.scheduledAt);
+        }
+        setDraftStatus('saved');
+      }
+    } catch {}
+  }, []);
+
+  // Auto-save draft with debounce (800ms)
+  useEffect(() => {
+    const hasAnyContent =
+      recipients.length > 0 ||
+      subject.trim().length > 0 ||
+      (editorRef.current && editorRef.current.innerHTML.trim() !== '' && editorRef.current.innerHTML !== '<br>') ||
+      bodyHtmlRef.current.trim().length > 0;
+
+    if (!hasAnyContent) return;
+
+    setDraftStatus('saving');
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          recipients,
+          ccRecipients,
+          bccRecipients,
+          subject,
+          bodyHtml: editorRef.current?.innerHTML || bodyHtmlRef.current,
+          scheduledAt,
+          savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('reachinbox_draft_v1', JSON.stringify(draft));
+        setDraftStatus('saved');
+      } catch {}
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [recipients, ccRecipients, bccRecipients, subject, scheduledAt]);
+
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem('reachinbox_draft_v1');
+    } catch {}
+    setRecipients([]);
+    setCcRecipients([]);
+    setBccRecipients([]);
+    setSubject('');
+    if (editorRef.current) editorRef.current.innerHTML = '';
+    bodyHtmlRef.current = '';
+    setDraftStatus('');
+    onBack();
+  };
+
   // Set default sender if senders load
   useEffect(() => {
     if (senders.length > 0 && !senderId) {
@@ -422,6 +503,10 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
           startTime: scheduledAt ? new Date(scheduledAt).toISOString() : new Date().toISOString(),
         });
       }
+
+      try {
+        localStorage.removeItem('reachinbox_draft_v1');
+      } catch {}
 
       onSuccess();
     } catch (err: any) {
@@ -1317,11 +1402,21 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
           </div>
         </div>
 
-        {/* Far Right: Discard Draft Trash Button */}
-        <div>
+        {/* Far Right: Draft saved indicator & Discard Draft Button */}
+        <div className="flex items-center gap-2.5">
+          {draftStatus === 'saved' && (
+            <span className="text-[11px] text-gray-500 select-none flex items-center gap-1 font-medium animate-in fade-in duration-100">
+              <Check className="w-3 h-3 text-gray-400 stroke-[2.5]" /> Draft saved
+            </span>
+          )}
+          {draftStatus === 'saving' && (
+            <span className="text-[11px] text-gray-400 select-none animate-pulse">
+              Saving...
+            </span>
+          )}
           <button
             type="button"
-            onClick={onBack}
+            onClick={handleDiscardDraft}
             className="p-1.5 rounded-lg text-gray-500 hover:text-[#0b57d0] hover:bg-blue-50 transition"
             title="Discard draft"
           >
