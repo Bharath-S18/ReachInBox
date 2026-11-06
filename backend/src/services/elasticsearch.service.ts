@@ -324,9 +324,9 @@ export class ElasticsearchService {
     if (query && query.trim() !== '') {
       const q = query.trim();
       whereClause.OR = [
-        { recipientEmail: { contains: q } },
-        { subject: { contains: q } },
-        { body: { contains: q } },
+        { recipientEmail: { contains: q, mode: 'insensitive' } },
+        { subject: { contains: q, mode: 'insensitive' } },
+        { body: { contains: q, mode: 'insensitive' } },
       ];
     }
 

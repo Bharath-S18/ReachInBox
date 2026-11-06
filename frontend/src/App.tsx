@@ -52,8 +52,14 @@ export function AppContent() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchSource, setSearchSource] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [sortMode, setSortMode] = useState<'relevant' | 'recent'>('relevant');
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -148,10 +154,10 @@ export function AppContent() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Debounced search querying Elasticsearch v8 backend
+  // Debounced search querying Elasticsearch v8 backend for top 5 live suggestions
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchSource(null);
+      setSearchSuggestions([]);
       setIsSearching(false);
       return;
     }
@@ -163,19 +169,71 @@ export function AppContent() {
     setIsSearching(true);
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const searchRes = await emailApi.search(searchQuery.trim());
+        const searchRes = await emailApi.search(searchQuery.trim(), { page: 1, limit: 5 });
+        setSearchSuggestions(searchRes.results.slice(0, 5));
         setSearchSource(searchRes.source || 'DATABASE_FALLBACK');
       } catch {
+        const q = searchQuery.toLowerCase();
+        const localMatches = [...scheduledJobs, ...sentJobs].filter(
+          (j) =>
+            j.recipientEmail.toLowerCase().includes(q) ||
+            j.subject.toLowerCase().includes(q) ||
+            (j.body && j.body.toLowerCase().includes(q))
+        );
+        setSearchSuggestions(localMatches.slice(0, 5));
         setSearchSource('DATABASE_FALLBACK');
       } finally {
         setIsSearching(false);
       }
-    }, 350);
+    }, 250);
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     };
-  }, [searchQuery]);
+  }, [searchQuery, scheduledJobs, sentJobs]);
+
+  const handleSearchSubmit = async (query: string, page = 1) => {
+    const q = query.trim();
+    if (!q) {
+      setActiveSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
+    setActiveSearchQuery(q);
+    setSearchPage(page);
+    setIsSearching(true);
+    try {
+      const searchRes = await emailApi.search(q, { page, limit: 50 });
+      setSearchResults(searchRes.results);
+      setSearchTotal(searchRes.total);
+      setSearchSource(searchRes.source || 'DATABASE_FALLBACK');
+    } catch {
+      const qLower = q.toLowerCase();
+      const localMatches = [...scheduledJobs, ...sentJobs].filter(
+        (j) =>
+          j.recipientEmail.toLowerCase().includes(qLower) ||
+          j.subject.toLowerCase().includes(qLower) ||
+          (j.body && j.body.toLowerCase().includes(qLower))
+      );
+      setSearchResults(localMatches);
+      setSearchTotal(localMatches.length);
+      setSearchSource('DATABASE_FALLBACK');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setActiveSearchQuery('');
+    setSearchResults([]);
+    setSearchSuggestions([]);
+    setSearchSource(null);
+  };
+
+  const handleSelectSuggestion = (item: any) => {
+    setSelectedEmail({ email: item, type: item.status === 'SENT' ? 'sent' : 'scheduled' });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('reachinbox_token');
@@ -239,26 +297,6 @@ export function AppContent() {
     );
   }
 
-  // Filter jobs by search query
-  const queryLower = searchQuery.toLowerCase().trim();
-  const filteredScheduled = scheduledJobs.filter((j) => {
-    if (!queryLower) return true;
-    return (
-      j.recipientEmail.toLowerCase().includes(queryLower) ||
-      j.subject.toLowerCase().includes(queryLower) ||
-      (j.body && j.body.toLowerCase().includes(queryLower))
-    );
-  });
-
-  const filteredSent = sentJobs.filter((j) => {
-    if (!queryLower) return true;
-    return (
-      j.recipientEmail.toLowerCase().includes(queryLower) ||
-      j.subject.toLowerCase().includes(queryLower) ||
-      (j.body && j.body.toLowerCase().includes(queryLower))
-    );
-  });
-
   const scheduledCount = stats?.scheduled ?? scheduledJobs.length;
   const sentCount = stats?.sent ?? sentJobs.length;
 
@@ -272,6 +310,7 @@ export function AppContent() {
           setActiveTab(tab);
           setSelectedEmail(null);
           setIsComposeOpen(false);
+          handleClearSearch();
         }}
         onOpenCompose={() => {
           setIsComposeOpen(true);
@@ -337,23 +376,63 @@ export function AppContent() {
             <TopSearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              onRefresh={() => loadDashboardData(true)}
+              onSubmit={(q) => handleSearchSubmit(q, 1)}
+              onSelectSuggestion={handleSelectSuggestion}
+              suggestions={searchSuggestions}
+              onClear={handleClearSearch}
+              onRefresh={() => {
+                if (activeSearchQuery) {
+                  handleSearchSubmit(activeSearchQuery, searchPage);
+                } else {
+                  loadDashboardData(true);
+                }
+              }}
               isRefreshing={isRefreshing}
               searchSource={searchSource}
               isSearching={isSearching}
             />
 
             <EmailListView
-              type={activeTab}
-              scheduledJobs={filteredScheduled}
-              sentJobs={filteredSent}
+              type={activeSearchQuery ? 'search' : activeTab}
+              scheduledJobs={scheduledJobs}
+              sentJobs={sentJobs}
+              searchResults={searchResults}
+              highlightQuery={activeSearchQuery}
+              currentPage={activeSearchQuery ? searchPage : 1}
+              totalCount={
+                activeSearchQuery
+                  ? searchTotal
+                  : activeTab === 'scheduled'
+                  ? scheduledJobs.length
+                  : sentJobs.length
+              }
+              pageSize={50}
+              onPageChange={(p) => {
+                if (activeSearchQuery) {
+                  handleSearchSubmit(activeSearchQuery, p);
+                }
+              }}
+              sortMode={sortMode}
+              onSortModeChange={setSortMode}
               onSelectEmail={(email, type) => {
-                setSelectedEmail({ email, type });
+                const resolvedType: 'scheduled' | 'sent' =
+                  type === 'search'
+                    ? email.status === 'SENT'
+                      ? 'sent'
+                      : 'scheduled'
+                    : type;
+                setSelectedEmail({ email, type: resolvedType });
               }}
               onCancelScheduled={handleCancelScheduled}
               onDeleteSelected={handleDeleteSelected}
-              onRefresh={() => loadDashboardData(true)}
-              isLoading={loading}
+              onRefresh={() => {
+                if (activeSearchQuery) {
+                  handleSearchSubmit(activeSearchQuery, searchPage);
+                } else {
+                  loadDashboardData(true);
+                }
+              }}
+              isLoading={loading || isSearching}
             />
           </div>
         )}

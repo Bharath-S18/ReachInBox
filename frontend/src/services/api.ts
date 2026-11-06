@@ -2,7 +2,6 @@ import axios from 'axios';
 import {
   EmailStats,
   ScheduledEmailJob,
-  SearchResult,
   SenderAccount,
   SentEmailJob,
   SlackStatus,
@@ -108,11 +107,36 @@ export const emailApi = {
     return res.data.stats || { total: 0, scheduled: 0, sent: 0, failed: 0, rescheduled: 0 };
   },
 
-  async search(query: string): Promise<{ source: string; query: string; total: number; results: SearchResult[] }> {
+  async search(
+    query: string,
+    options: { page?: number; limit?: number; status?: string } = {}
+  ): Promise<{
+    source: string;
+    query: string;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    results: any[];
+  }> {
     const res = await api.get('/api/emails/search', {
-      params: { q: query },
+      params: {
+        q: query,
+        page: options.page || 1,
+        limit: options.limit || 50,
+        status: options.status,
+      },
     });
-    return res.data;
+    const dataList = (res.data.data || res.data.results || []) as any[];
+    return {
+      source: res.data.source || 'DATABASE_FALLBACK',
+      query: res.data.query || query,
+      total: res.data.total ?? dataList.length,
+      page: res.data.page ?? (options.page || 1),
+      limit: res.data.limit ?? (options.limit || 50),
+      totalPages: res.data.totalPages ?? 1,
+      results: dataList,
+    };
   },
 
   async schedule(payload: FormData | {
