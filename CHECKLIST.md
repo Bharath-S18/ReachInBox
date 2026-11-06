@@ -14,8 +14,11 @@ This document tracks all implementation phases, remediation items, and granular 
 - [x] **Phase 7: Bull-Board & Express API Endpoints** (7/7 completed)
 - [x] **Phase R1: Backend Operationalization & Database Generation** (4/4 completed)
 - [x] **Phase R2: Frontend Real-Data Integration & Gaps Remediation** (6/6 completed)
-- [ ] **Phase R3: End-to-End Live Workflow Verification** (Ready to run)
+- [x] **Phase R3: End-to-End Live Workflow Verification** (6/6 verified)
+- [x] **Phase 8: Frontend Dashboard & Outreach Engine** (10/10 completed)
+- [x] **Phase 9: Testing, Load Simulation & Resilience Verification** (4/4 completed)
 - [x] **Phase 10: Submission Kit & Documentation** (4/4 completed)
+- [x] **Phase 11: Gmail-Style Compose & Advanced Inbox Experience** (10/10 completed)
 
 ---
 
@@ -61,12 +64,12 @@ Eliminate silent fake fallback data and wire the UI directly to real backend API
 
 ### Phase R3: End-to-End Live Workflow Verification
 Execute and verify complete end-to-end user journeys with both frontend and backend running.
-- [ ] **R3.1 Authentication Flow**: Log in via Demo Account or Google OAuth; verify JWT persistence and `GET /api/auth/me`.
-- [ ] **R3.2 Sender Account Setup**: Verify sender list in `SendersModal`, test auto-provisioning an Ethereal SMTP account.
-- [ ] **R3.3 Single & Batch Scheduling**: Compose and schedule an email (with custom delay and hourly limit) and upload a test CSV with multiple leads.
-- [ ] **R3.4 Queue Execution & Ethereal Delivery**: Observe jobs in BullMQ / Bull-Board, verify scheduled-to-sent status transition, and click through to live Ethereal inbox previews.
-- [ ] **R3.5 Hourly Rate Limiting & Slack Alerting**: Send a batch exceeding sender's hourly limit, verify rescheduling to next UTC hour and inspect Slack alert payload.
-- [ ] **R3.6 Full-Text Search Verification**: Search emails by recipient, subject, and body snippet using the search bar; verify accurate results.
+- [x] **R3.1 Authentication Flow**: Log in via Demo Account or Google OAuth; verify JWT persistence and `GET /api/auth/me`.
+- [x] **R3.2 Sender Account Setup**: Verify sender list in `SendersModal`, test auto-provisioning an Ethereal SMTP account.
+- [x] **R3.3 Single & Batch Scheduling**: Compose and schedule an email (with custom delay and hourly limit) and upload a test CSV with multiple leads.
+- [x] **R3.4 Queue Execution & Ethereal Delivery**: Observe jobs in BullMQ / Bull-Board, verify scheduled-to-sent status transition, and click through to live Ethereal inbox previews.
+- [x] **R3.5 Hourly Rate Limiting & Slack Alerting**: Send a batch exceeding sender's hourly limit, verify rescheduling to next UTC hour and inspect Slack alert payload.
+- [x] **R3.6 Full-Text Search Verification**: Search emails by recipient, subject, and body snippet using the search bar; verify accurate results.
 
 ---
 
@@ -176,3 +179,41 @@ Execute and verify complete end-to-end user journeys with both frontend and back
 - [x] **10.2 Environment Configuration Guide**: Step-by-step instructions for Google OAuth, Slack App, Ethereal, and local Redis / SQLite.
 - [x] **10.3 5-Minute Demo Video Script**: Step-by-step checklist of flows to record for the demo video.
 - [x] **10.4 Final Code Review & Cleanup**: Verified TypeScript builds with zero errors across monorepo (`npm run build`).
+
+---
+
+## Phase 11: Gmail-Style Compose & Advanced Inbox Experience
+- [x] **11.1 Gmail-Style Dockable Compose Window**:
+  - Minimize (`-`), maximize/expand (`⤢`), and close (`✕`) states.
+  - Floating docked tab at bottom-right when minimized.
+  - Primary Google Blue split **Send** button (`#0b57d0`) with dropdown for scheduled dispatch options.
+- [x] **11.2 Floating Rich Text Formatting Toolbar (`Aa`)**:
+  - Dynamic `Aa` toggle opening a Google Docs/Gmail floating formatting bar.
+  - Working Bold, Italic, Underline, Font Families (Sans Serif, Serif, Monospace, Comic Sans, Impact), Font Sizes (Small, Normal, Large, Huge), Text Colors, and Highlight Colors.
+  - Active button state highlighting and zero selection interference.
+- [x] **11.3 Interactive Multi-Recipient Chips**:
+  - Automatic conversion of typed emails into interactive capsule chips.
+  - Initial avatar badges with deterministic color palettes (e.g. orange `#e65100` / red `#d93025`).
+  - Full email address preservation so user addresses are never stripped or hidden.
+  - Multi-recipient support across `To`, `Cc`, and `Bcc` rows.
+- [x] **11.4 Automatic Draft Persistence (Client-Side Storage)**:
+  - Real-time debounced auto-saving to local storage as you type subject, body, or recipients.
+  - Subtle `Draft saved` / `Saving...` indicator with checkmark at the bottom toolbar.
+  - Instant rehydration upon re-opening Compose.
+  - Discard draft (Trash icon) and send success purge the draft cleanly.
+- [x] **11.5 Gmail-Style List View (Scheduled & Sent)**:
+  - **Top Action Bar**: Select-all checkbox with dropdown filters (`All`, `None`, `Starred`, `Unstarred`).
+  - **Batch Actions Toolbar**: Archive, Report spam, Delete (Trash bin), Mark as unread, Move to, and More options.
+  - **Selection Announcement Banner**: Displays *"All X conversations on this page are selected. Select all Y conversations in..."* when all items are selected.
+  - **Hover Quick Actions**: Row date/time smoothly transforms on hover into Archive, Delete, Mark as unread, and Snooze icons.
+  - **Google Blue Selection Highlighting**: Selected rows render with Gmail's exact soft blue background (`bg-[#c2e7ff]`).
+- [x] **11.6 Single & Batch Deletion API**:
+  - `DELETE /api/emails/scheduled/:id` & `DELETE /api/emails/:id`
+  - `POST /api/emails/batch-delete` for bulk deletion of selected items.
+  - Automatically cancels BullMQ delayed jobs and deletes database records from PostgreSQL and Elasticsearch.
+- [x] **11.7 Lead Parser Bug Remediation**:
+  - Fixed regex collision in `csvParser.ts` where addresses containing `gmail` triggered header detection and were skipped.
+  - Validated single email, multiple comma-separated emails, and CSV with/without headers.
+- [x] **11.8 Unified Design Theme**:
+  - Entire frontend transitioned from emerald green to the unified Google Blue palette (`#0b57d0`, `#d3e3fd`, `#041e49`).
+  - Verified and styled across Sidebar, TopSearchBar, Compose, List Views, Detail Views, and Modals.
