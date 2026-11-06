@@ -8,15 +8,13 @@ import { EmailListView } from './components/layout/EmailListView';
 import { EmailDetailView } from './components/layout/EmailDetailView';
 import { ComposeView } from './components/layout/ComposeView';
 import { QueueTelemetryView } from './components/dashboard/QueueTelemetryView';
-import { SlackModal } from './components/SlackModal';
 import { SendersModal } from './components/SendersModal';
-import { authApi, emailApi, senderApi, slackApi } from './services/api';
+import { authApi, emailApi, senderApi } from './services/api';
 import {
   EmailStats,
   ScheduledEmailJob,
   SenderAccount,
   SentEmailJob,
-  SlackStatus,
   User,
 } from './types';
 
@@ -37,13 +35,11 @@ export function AppContent() {
   } | null>(null);
 
   // Modals
-  const [isSlackModalOpen, setIsSlackModalOpen] = useState(false);
   const [isSendersModalOpen, setIsSendersModalOpen] = useState(false);
 
   // Data states
   const [stats, setStats] = useState<EmailStats | null>(null);
   const [senders, setSenders] = useState<SenderAccount[]>([]);
-  const [slackStatus, setSlackStatus] = useState<SlackStatus | null>(null);
   const [scheduledJobs, setScheduledJobs] = useState<ScheduledEmailJob[]>([]);
   const [sentJobs, setSentJobs] = useState<SentEmailJob[]>([]);
 
@@ -106,14 +102,13 @@ export function AppContent() {
     setIsRefreshing(true);
 
     try {
-      const [statsRes, sendersRes, slackRes, scheduledRes, sentRes] =
+      const [statsRes, sendersRes, scheduledRes, sentRes] =
         await Promise.all([
           emailApi.getStats().catch(() => {
             setBackendOnline(false);
             return { total: 0, scheduled: 0, sent: 0, failed: 0, rescheduled: 0 };
           }),
           senderApi.list().catch(() => ({ senders: [] })),
-          slackApi.getStatus().catch(() => ({ connected: false })),
           emailApi.getScheduled(1, 100).catch(() => {
             setBackendOnline(false);
             return { jobs: [], total: 0 };
@@ -127,7 +122,6 @@ export function AppContent() {
       setBackendOnline(true);
       setStats(statsRes);
       setSenders(sendersRes.senders || []);
-      setSlackStatus(slackRes);
       setScheduledJobs(scheduledRes.jobs || []);
       setSentJobs(sentRes.jobs || []);
     } catch (err) {
@@ -316,12 +310,10 @@ export function AppContent() {
           setIsComposeOpen(true);
           setSelectedEmail(null);
         }}
-        onOpenSlack={() => setIsSlackModalOpen(true)}
         onOpenSenders={() => setIsSendersModalOpen(true)}
         onLogout={handleLogout}
         scheduledCount={scheduledCount}
         sentCount={sentCount}
-        slackConnected={slackStatus?.connected}
       />
 
       {/* Main Content Area */}
@@ -450,14 +442,6 @@ export function AppContent() {
           />
         )}
       </main>
-
-      {/* Slack Live Alert Modal */}
-      <SlackModal
-        isOpen={isSlackModalOpen}
-        onClose={() => setIsSlackModalOpen(false)}
-        status={slackStatus}
-        onStatusUpdated={() => loadDashboardData(true)}
-      />
 
       {/* Senders SMTP Management Modal */}
       <SendersModal

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Clock, Send, ChevronDown, Plus, LogOut, Radio, Slack, Mail, Activity } from 'lucide-react';
+import { Clock, Send, ChevronDown, Plus, LogOut, Radio, Mail, Activity } from 'lucide-react';
 import { User } from '../../types';
 
 interface SidebarProps {
@@ -7,12 +7,10 @@ interface SidebarProps {
   activeTab: 'scheduled' | 'sent' | 'telemetry';
   onTabChange: (tab: 'scheduled' | 'sent' | 'telemetry') => void;
   onOpenCompose: () => void;
-  onOpenSlack: () => void;
   onOpenSenders: () => void;
   onLogout: () => void;
   scheduledCount: number;
   sentCount: number;
-  slackConnected?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -20,12 +18,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   onOpenCompose,
-  onOpenSlack,
   onOpenSenders,
   onLogout,
   scheduledCount,
   sentCount,
-  slackConnected,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -107,16 +103,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Mail className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Outbound SMTP Senders</span>
-            </button>
-            <button
-              onClick={() => {
-                onOpenSlack();
-                setMenuOpen(false);
-              }}
-              className="w-full px-3.5 py-2 flex items-center gap-2.5 hover:bg-gray-50 text-left font-medium"
-            >
-              <Slack className="w-3.5 h-3.5 text-purple-600" />
-              <span>Slack Live Alerts {slackConnected && '(Connected)'}</span>
             </button>
             <div className="my-1 border-t border-gray-100" />
             <button
@@ -235,20 +221,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-[10px] bg-blue-50 text-[#0b57d0] px-1.5 py-0.5 rounded font-medium">Manage</span>
         </button>
 
-        <button
-          onClick={onOpenSlack}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition"
-        >
-          <div className="flex items-center gap-2.5">
-            <Slack className="w-3.5 h-3.5 text-purple-600" />
-            <span>Slack #alerts</span>
-          </div>
-          {slackConnected ? (
-            <span className="w-2 h-2 rounded-full bg-[#0b57d0]" />
-          ) : (
-            <span className="text-[10px] text-gray-400">Link</span>
-          )}
-        </button>
       </div>
     </aside>
   );
