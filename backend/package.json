@@ -13,7 +13,10 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "test:resilience": "tsx src/test/resilience.test.ts",
     "test:queue": "tsx src/test/queue.test.ts",
-    "test:api": "tsx src/test/api.test.ts"
+    "test:api": "tsx src/test/api.test.ts",
+    "test:rateLimiter": "tsx src/test/rateLimiter.test.ts",
+    "test:drafts": "tsx src/test/drafts.test.ts",
+    "test": "tsx src/test/rateLimiter.test.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.7.12",
