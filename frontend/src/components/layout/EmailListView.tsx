@@ -15,14 +15,16 @@ import {
   MinusSquare,
   Eye,
 } from 'lucide-react';
-import { ScheduledEmailJob, SentEmailJob } from '../../types';
+import { EmailDraft, ScheduledEmailJob, SentEmailJob } from '../../types';
 
 interface EmailListViewProps {
-  type: 'scheduled' | 'sent' | 'search';
+  type: 'scheduled' | 'sent' | 'drafts' | 'search';
   scheduledJobs: ScheduledEmailJob[];
   sentJobs: SentEmailJob[];
+  drafts?: EmailDraft[];
   searchResults?: any[];
-  onSelectEmail: (email: ScheduledEmailJob | SentEmailJob | any, type: 'scheduled' | 'sent' | 'search') => void;
+  onSelectEmail: (email: ScheduledEmailJob | SentEmailJob | any, type: 'scheduled' | 'sent' | 'drafts' | 'search') => void;
+  onSelectDraft?: (draft: EmailDraft) => void;
   onCancelScheduled?: (id: string) => void;
   onDeleteSelected?: (ids: string[]) => void;
   onRefresh?: () => void;
@@ -40,8 +42,10 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   type,
   scheduledJobs,
   sentJobs,
+  drafts = [],
   searchResults = [],
   onSelectEmail,
+  onSelectDraft,
   onCancelScheduled,
   onDeleteSelected,
   onRefresh,
@@ -74,7 +78,13 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   }, []);
 
   const currentJobs: any[] =
-    type === 'search' ? searchResults : type === 'scheduled' ? scheduledJobs : sentJobs;
+    type === 'search'
+      ? searchResults
+      : type === 'scheduled'
+      ? scheduledJobs
+      : type === 'drafts'
+      ? drafts
+      : sentJobs;
 
   const toggleStar = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -402,20 +412,24 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
               ? 'No matching emails found'
               : type === 'scheduled'
                 ? 'No scheduled emails'
-                : 'No sent emails yet'}
+                : type === 'drafts'
+                  ? 'No saved drafts'
+                  : 'No sent emails yet'}
           </h3>
           <p className="text-xs text-gray-400 mt-1 max-w-sm">
             {type === 'search'
               ? 'Try searching with another keyword, recipient address, or subject line.'
               : type === 'scheduled'
                 ? 'Click "Compose" to schedule outreach campaigns with automated queue delivery.'
-                : 'Delivered emails with Ethereal SMTP live preview links will appear here.'}
+                : type === 'drafts'
+                  ? 'Unsent emails automatically save here in real-time so you never lose your work.'
+                  : 'Delivered emails with Ethereal SMTP live preview links will appear here.'}
           </p>
         </div>
       )}
 
       {/* 4. Gmail Email Rows (Screenshots 1, 2, 3, 4) */}
-      <div className="flex-1 divide-y divide-gray-100 overflow-y-auto">
+      <div className="flex-1 divide-y divide-gray-100 overflow-y-auto scrollbar-chatgpt">
         {currentJobs.map((job) => {
           const isSelected = selectedIds.has(job.id);
           const isStarred = !!starredIds[job.id];
@@ -428,7 +442,13 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
           return (
             <div
               key={job.id}
-              onClick={() => onSelectEmail(job, type)}
+              onClick={() => {
+                if (type === 'drafts' && onSelectDraft) {
+                  onSelectDraft(job);
+                } else {
+                  onSelectEmail(job, type);
+                }
+              }}
               className={`flex items-center px-3 sm:px-4 py-2 cursor-pointer transition-colors group text-sm select-none border-b border-gray-100 ${isSelected
                   ? 'bg-[#c2e7ff] hover:bg-[#b3dcfb] border-b-blue-100'
                   : 'bg-white hover:bg-[#f2f6fc] hover:shadow-xs'
@@ -473,12 +493,18 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                 className={`w-36 sm:w-48 shrink-0 truncate pr-2 text-sm ${isSelected ? 'font-semibold text-[#041e49]' : 'font-semibold text-gray-900'
                   }`}
               >
-                {type === 'scheduled' ? `To: ${recipientName}` : recipientName}
+                {type === 'drafts' ? (
+                  <span className="text-red-600 font-bold">Draft</span>
+                ) : type === 'scheduled' ? (
+                  `To: ${recipientName}`
+                ) : (
+                  recipientName
+                )}
               </div>
 
               {/* Subject & Body Snippet Column (Screenshot 4 with yellow highlight) */}
               <div className="flex-1 min-w-0 flex items-center gap-1.5 truncate pr-4 text-sm">
-                {/* Category Pill: "Inbox" / "Scheduled" / "Sent" (Screenshot 4) */}
+                {/* Category Pill: "Inbox" / "Scheduled" / "Draft" / "Sent" */}
                 <span className="shrink-0 text-[11px] font-medium text-gray-600 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded mr-1">
                   {type === 'search'
                     ? job.status === 'SENT'
@@ -486,7 +512,9 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       : 'Scheduled'
                     : type === 'scheduled'
                       ? 'Scheduled'
-                      : 'Sent'}
+                      : type === 'drafts'
+                        ? 'Draft'
+                        : 'Sent'}
                 </span>
 
                 <span

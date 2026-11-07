@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { LoginScreen } from './components/LoginScreen';
+import { LandingPage } from './components/landing/LandingPage';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopSearchBar } from './components/layout/TopSearchBar';
 import { EmailListView } from './components/layout/EmailListView';
@@ -10,8 +10,9 @@ import { ComposeView } from './components/layout/ComposeView';
 import { QueueTelemetryView } from './components/dashboard/QueueTelemetryView';
 import { SendersModal } from './components/SendersModal';
 import { SlackModal } from './components/SlackModal';
-import { authApi, emailApi, senderApi, slackApi } from './services/api';
+import { authApi, emailApi, senderApi, slackApi, draftApi } from './services/api';
 import {
+  EmailDraft,
   EmailStats,
   ScheduledEmailJob,
   SenderAccount,
@@ -29,8 +30,9 @@ export function AppContent() {
   const [authLoading, setAuthLoading] = useState(true);
 
   // Active view & navigation
-  const [activeTab, setActiveTab] = useState<'scheduled' | 'sent' | 'telemetry'>('scheduled');
+  const [activeTab, setActiveTab] = useState<'scheduled' | 'drafts' | 'sent' | 'telemetry'>('scheduled');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [activeDraft, setActiveDraft] = useState<EmailDraft | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<{
     email: ScheduledEmailJob | SentEmailJob;
     type: 'scheduled' | 'sent';
@@ -46,6 +48,7 @@ export function AppContent() {
   const [senders, setSenders] = useState<SenderAccount[]>([]);
   const [scheduledJobs, setScheduledJobs] = useState<ScheduledEmailJob[]>([]);
   const [sentJobs, setSentJobs] = useState<SentEmailJob[]>([]);
+  const [drafts, setDrafts] = useState<EmailDraft[]>([]);
 
   // Backend connectivity status
   const [backendOnline, setBackendOnline] = useState(true);
@@ -65,11 +68,13 @@ export function AppContent() {
 
   const searchTimerRef = useRef<any>(null);
 
-  // Check existing token on mount
+  // Check existing token on mount - strictly enforce valid server-verified session
   useEffect(() => {
     const token = localStorage.getItem('reachinbox_token');
-    const cachedUser = localStorage.getItem('reachinbox_user');
     if (!token) {
+      localStorage.removeItem('reachinbox_token');
+      localStorage.removeItem('reachinbox_user');
+      setUser(null);
       setAuthLoading(false);
       return;
     }
@@ -82,18 +87,10 @@ export function AppContent() {
         setBackendOnline(true);
       })
       .catch(() => {
-        if (cachedUser) {
-          try {
-            setUser(JSON.parse(cachedUser));
-          } catch {
-            localStorage.removeItem('reachinbox_token');
-            localStorage.removeItem('reachinbox_user');
-            setUser(null);
-          }
-        } else {
-          localStorage.removeItem('reachinbox_token');
-          setUser(null);
-        }
+        // Token is invalid, expired, or rejected: completely clear session and force Google OAuth
+        localStorage.removeItem('reachinbox_token');
+        localStorage.removeItem('reachinbox_user');
+        setUser(null);
       })
       .finally(() => {
         setAuthLoading(false);
@@ -106,7 +103,7 @@ export function AppContent() {
     setIsRefreshing(true);
 
     try {
-      const [statsRes, sendersRes, scheduledRes, sentRes, slackRes] =
+      const [statsRes, sendersRes, scheduledRes, sentRes, slackRes, draftsRes] =
         await Promise.all([
           emailApi.getStats().catch(() => {
             setBackendOnline(false);
@@ -122,6 +119,7 @@ export function AppContent() {
             return { jobs: [], total: 0 };
           }),
           slackApi.getStatus().catch(() => ({ connected: false })),
+          draftApi.list().catch(() => ({ drafts: [], total: 0 })),
         ]);
 
       setBackendOnline(true);
@@ -130,6 +128,7 @@ export function AppContent() {
       setScheduledJobs(scheduledRes.jobs || []);
       setSentJobs(sentRes.jobs || []);
       setSlackStatus(slackRes || { connected: false });
+      setDrafts(draftsRes.drafts || []);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       setBackendOnline(false);
@@ -258,20 +257,21 @@ export function AppContent() {
 
   const handleDeleteSelected = async (ids: string[]) => {
     try {
-      await emailApi.batchDelete(ids);
-      setScheduledJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
-      setSentJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      if (activeTab === 'drafts') {
+        await Promise.all(ids.map((id) => draftApi.delete(id)));
+        setDrafts((prev) => prev.filter((d) => !ids.includes(d.id)));
+      } else {
+        await emailApi.batchDelete(ids);
+        setScheduledJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+        setSentJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
+      }
       if (selectedEmail && ids.includes(selectedEmail.email.id)) {
         setSelectedEmail(null);
       }
       loadDashboardData(true);
     } catch (err: any) {
       console.error('Batch delete error:', err);
-      setScheduledJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
-      setSentJobs((prev) => prev.filter((j) => !ids.includes(j.id)));
-      if (selectedEmail && ids.includes(selectedEmail.email.id)) {
-        setSelectedEmail(null);
-      }
+      loadDashboardData(true);
     }
   };
 
@@ -286,12 +286,13 @@ export function AppContent() {
     );
   }
 
-  // If user is not logged in: Show authentic Login Screen
+  // If user is not logged in: Show modern SaaS Marketing Landing Page with Google OAuth
   if (!user) {
     return (
-      <LoginScreen
+      <LandingPage
         onLoginSuccess={(loggedUser) => {
           setUser(loggedUser);
+          loadDashboardData(true);
         }}
       />
     );
@@ -313,6 +314,7 @@ export function AppContent() {
           handleClearSearch();
         }}
         onOpenCompose={() => {
+          setActiveDraft(null);
           setIsComposeOpen(true);
           setSelectedEmail(null);
         }}
@@ -321,6 +323,7 @@ export function AppContent() {
         slackStatus={slackStatus}
         onLogout={handleLogout}
         scheduledCount={scheduledCount}
+        draftsCount={drafts.length}
         sentCount={sentCount}
       />
 
@@ -360,7 +363,7 @@ export function AppContent() {
           />
         ) : activeTab === 'telemetry' ? (
           /* Scenario 3: Live BullMQ Queue Telemetry */
-          <div className="flex-1 p-6 overflow-y-auto bg-gray-50/50">
+          <div className="flex-1 p-6 overflow-y-auto scrollbar-chatgpt bg-gray-50/50">
             <QueueTelemetryView
               stats={stats}
               scheduledJobs={scheduledJobs}
@@ -396,6 +399,7 @@ export function AppContent() {
               type={activeSearchQuery ? 'search' : activeTab}
               scheduledJobs={scheduledJobs}
               sentJobs={sentJobs}
+              drafts={drafts}
               searchResults={searchResults}
               highlightQuery={activeSearchQuery}
               currentPage={activeSearchQuery ? searchPage : 1}
@@ -404,6 +408,8 @@ export function AppContent() {
                   ? searchTotal
                   : activeTab === 'scheduled'
                   ? scheduledJobs.length
+                  : activeTab === 'drafts'
+                  ? drafts.length
                   : sentJobs.length
               }
               pageSize={50}
@@ -414,14 +420,18 @@ export function AppContent() {
               }}
               sortMode={sortMode}
               onSortModeChange={setSortMode}
+              onSelectDraft={(draft) => {
+                setActiveDraft(draft);
+                setIsComposeOpen(true);
+              }}
               onSelectEmail={(email, type) => {
-                const resolvedType: 'scheduled' | 'sent' =
+                const resolvedType: 'scheduled' | 'sent' | 'drafts' =
                   type === 'search'
                     ? email.status === 'SENT'
                       ? 'sent'
                       : 'scheduled'
                     : type;
-                setSelectedEmail({ email, type: resolvedType });
+                setSelectedEmail({ email, type: resolvedType as any });
               }}
               onCancelScheduled={handleCancelScheduled}
               onDeleteSelected={handleDeleteSelected}
@@ -442,9 +452,17 @@ export function AppContent() {
           <ComposeView
             senders={senders}
             currentUser={user}
-            onBack={() => setIsComposeOpen(false)}
+            initialDraft={activeDraft}
+            onBack={() => {
+              setIsComposeOpen(false);
+              setActiveDraft(null);
+            }}
             onSuccess={() => {
               setIsComposeOpen(false);
+              setActiveDraft(null);
+              loadDashboardData(true);
+            }}
+            onDraftSaved={() => {
               loadDashboardData(true);
             }}
           />

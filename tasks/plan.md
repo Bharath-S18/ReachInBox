@@ -1,44 +1,48 @@
-# Implementation Plan: ReachInBox Next Steps & Final Delivery
+# Implementation Plan: SaaS Landing Page & Gmail-Style Database Drafts
 
 ## Overview
-All 13 core engineering phases of the ReachInBox distributed email scheduler (backend BullMQ queue engine, rate limiter, Ethereal multi-sender, Elasticsearch fallback, Gmail-style UI, draft persistence, CSV ingestion, and Dockerfiles) are fully implemented, passing builds with 0 TypeScript errors.
-This plan defines the concrete execution roadmap to transition from codebase completion to final evaluation, local verification, demo recording, and deployment.
-
-## Architecture & Project State Summary
-- **Backend**: Express + TypeScript + BullMQ + Redis + Prisma ORM on port 5000.
-- **Frontend**: React + Vite + Tailwind CSS (Gmail-themed UI) on port 3000 / 5173.
-- **Queues**: Redis-backed BullMQ with Bull-Board dashboard at `http://localhost:5000/admin/queues`.
-- **Delivery**: Nodemailer with Ethereal SMTP live preview URL generation.
-- **Git Branch**: `feat/phase-9-resilience-and-load-tests` (pushed to origin).
+This plan implements two major features requested by the user:
+1. **Full Marketing Landing Page**: Replaces the isolated login box with a modern SaaS marketing landing page featuring a sticky header, hero section with interactive preview, feature pillars, and Google OAuth sign-in CTAs.
+2. **Gmail-Style Database Drafts**: Fully persistent drafts system with Prisma model, backend REST API, auto-save in `ComposeView`, a dedicated `Drafts` tab in the sidebar with live counts, and click-to-resume functionality.
 
 ---
 
-## Action Tracks
+## Technical Specifications
 
-### Track A: Local Verification & Walkthrough (Immediate Next Step)
-Verify the running application end-to-end on your machine so you can interact with it and confirm every flow works.
+### Feature 1: SaaS Marketing Landing Page (`frontend/src/components/landing/LandingPage.tsx`)
+- **Structure**:
+  - Sticky Top Nav: ReachInbox logo, architecture highlights link, and Google Sign-In button.
+  - Hero Section: Headline ("Distributed Cold Outreach & Intelligent Email Scheduler"), live status badges, "Continue with Google" primary CTA, and an interactive mockup preview of the mail dashboard.
+  - Core Feature Pillars:
+    - Distributed BullMQ Queuing with Redis ZSET delayed dispatch.
+    - Multi-Sender SMTP Rotation with hourly rate-limit throttling (2,000ms inter-email sleep).
+    - Slack Rate-Limit Webhook alerting.
+    - Ethereal SMTP live preview URL generation.
+  - Footer: Monorepo tech stack & architecture specs.
+- **Auth Flow**: Clicking any Google button invokes `useGoogleLogin` and transitions seamlessly into the authenticated app upon success.
 
-### Track B: Demo Video Recording & Submission Kit
-Prepare test datasets and execute the 5-minute evaluation script demonstrating scheduling, BullMQ queues, rate limiting, and Ethereal email delivery.
-
-### Track C: Live Cloud Deployment
-Deploy to free cloud services (Vercel + Railway/Render + Upstash Redis) or run the single-command Docker stack for an evaluator-ready live link.
-
-### Track D: Slack Alerting Activation (Optional)
-Re-enable the frontend Slack connection UI if the assignment rubric requires live Slack rate-limit webhook notifications.
+### Feature 2: Gmail-Style Database Drafts
+- **Backend Schema (`backend/prisma/schema.prisma`)**:
+  - `model EmailDraft`: `id`, `userId`, `recipientEmail`, `subject`, `body`, `senderAccountId`, `delaySeconds`, `createdAt`, `updatedAt`.
+- **Backend API (`backend/src/controllers/draft.controller.ts` & `backend/src/routes/draft.routes.ts`)**:
+  - `GET /api/drafts` - Fetch user's drafts with total count.
+  - `POST /api/drafts` - Upsert draft (create new or update existing by `id`).
+  - `DELETE /api/drafts/:id` - Delete draft on discard or when scheduled.
+- **Frontend Integration**:
+  - `frontend/src/types.ts`: Define `EmailDraft`.
+  - `frontend/src/services/api.ts`: Add `draftApi`.
+  - `Sidebar.tsx`: Add `Drafts` tab with draft count pill between `Scheduled` and `Sent`.
+  - `ComposeView.tsx`: Debounced auto-save (1000ms), "Draft saved" footer indicator, and draft cleanup on dispatch.
+  - `EmailListView.tsx` & `App.tsx`: Render drafts list view with click-to-resume in `ComposeView`.
 
 ---
 
-## Risks and Mitigations
-
-| Risk | Impact | Mitigation |
-| :--- | :--- | :--- |
-| Port conflicts (Redis 6379, Backend 5000) | Medium | Check port status before launching services; support configurable environment ports. |
-| Sandboxed TCP restriction on Windows | Medium | Execute external service commands with BypassSandbox flag. |
-| Missing Ethereal credentials on fresh boot | Low | Backend automatically provisions Ethereal test accounts on startup if none exist. |
-
----
-
-## Open Decisions for the User
-1. **Primary Goal**: Are you preparing this for an assignment submission (demo video + repo link), or do you want to deploy a live URL first?
-2. **Slack Policy**: Do you want to keep Slack hidden for now, or re-enable the UI button to show the rate-limit notifications?
+## Verification Plan
+1. Monorepo TypeScript & Vite build verification (`npm run build`).
+2. Schema migration verification (`npx prisma db push` / `prisma generate`).
+3. Manual testing:
+   - Land on marketing page when logged out.
+   - Click "Continue with Google" to log in.
+   - Open Compose, type an email, observe "Draft saved".
+   - Close compose, navigate to "Drafts" tab in sidebar, verify draft appears with correct count.
+   - Click draft to re-open and schedule it, verify draft disappears from Drafts and appears in Scheduled.

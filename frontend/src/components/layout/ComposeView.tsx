@@ -24,8 +24,8 @@ import {
   Check,
   Upload,
 } from 'lucide-react';
-import { SenderAccount, User } from '../../types';
-import { emailApi } from '../../services/api';
+import { SenderAccount, User, EmailDraft } from '../../types';
+import { emailApi, draftApi } from '../../services/api';
 
 interface RecipientChip {
   id: string;
@@ -120,15 +120,19 @@ function createRecipientChip(
 interface ComposeViewProps {
   senders: SenderAccount[];
   currentUser?: User | null;
+  initialDraft?: EmailDraft | null;
   onBack: () => void;
   onSuccess: () => void;
+  onDraftSaved?: () => void;
 }
 
 export const ComposeView: React.FC<ComposeViewProps> = ({
   senders,
   currentUser,
+  initialDraft,
   onBack,
   onSuccess,
+  onDraftSaved,
 }) => {
   // Window dock / maximize state
   const [windowState, setWindowState] = useState<'normal' | 'minimized' | 'maximized'>('normal');
@@ -188,47 +192,76 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Draft auto-save state
-  const [draftStatus, setDraftStatus] = useState<'saved' | 'saving' | ''>('');
+  // Draft auto-save state & current database draft ID tracking
+  const [draftStatus, setDraftStatus] = useState<'saved' | 'saving' | ''>(initialDraft ? 'saved' : '');
+  const currentDraftIdRef = useRef<string | null>(initialDraft?.id || null);
 
-  // Rehydrate draft from localStorage on mount
+  // Prepopulate from initialDraft or fallback to localStorage
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('reachinbox_draft_v1');
-      if (stored) {
-        const d = JSON.parse(stored);
-        if (d.recipients && Array.isArray(d.recipients) && d.recipients.length > 0) {
-          setRecipients(d.recipients);
-        }
-        if (d.ccRecipients && Array.isArray(d.ccRecipients) && d.ccRecipients.length > 0) {
-          setCcRecipients(d.ccRecipients);
-          setShowCc(true);
-        }
-        if (d.bccRecipients && Array.isArray(d.bccRecipients) && d.bccRecipients.length > 0) {
-          setBccRecipients(d.bccRecipients);
-          setShowBcc(true);
-        }
-        if (d.subject) {
-          setSubject(d.subject);
-        }
-        if (d.bodyHtml) {
-          bodyHtmlRef.current = d.bodyHtml;
-          if (editorRef.current) {
-            editorRef.current.innerHTML = d.bodyHtml;
-          }
-        }
-        if (d.scheduledAt) {
-          setScheduledAt(d.scheduledAt);
-        }
-        setDraftStatus('saved');
+    if (initialDraft) {
+      currentDraftIdRef.current = initialDraft.id;
+      if (initialDraft.recipientEmail) {
+        const parts = initialDraft.recipientEmail.split(',').map((p) => p.trim()).filter(Boolean);
+        const chips = parts
+          .map((p) => createRecipientChip(p, currentUser, senders))
+          .filter(Boolean) as RecipientChip[];
+        setRecipients(chips);
       }
-    } catch {}
-  }, []);
+      if (initialDraft.subject) {
+        setSubject(initialDraft.subject);
+      }
+      if (initialDraft.body) {
+        bodyHtmlRef.current = initialDraft.body;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = initialDraft.body;
+        }
+      }
+      if (initialDraft.senderAccountId) {
+        setSenderId(initialDraft.senderAccountId);
+      }
+      if (initialDraft.delaySeconds) {
+        setDelaySec(initialDraft.delaySeconds);
+      }
+      setDraftStatus('saved');
+    } else {
+      try {
+        const stored = localStorage.getItem('reachinbox_draft_v1');
+        if (stored) {
+          const d = JSON.parse(stored);
+          if (d.recipients && Array.isArray(d.recipients) && d.recipients.length > 0) {
+            setRecipients(d.recipients);
+          }
+          if (d.ccRecipients && Array.isArray(d.ccRecipients) && d.ccRecipients.length > 0) {
+            setCcRecipients(d.ccRecipients);
+            setShowCc(true);
+          }
+          if (d.bccRecipients && Array.isArray(d.bccRecipients) && d.bccRecipients.length > 0) {
+            setBccRecipients(d.bccRecipients);
+            setShowBcc(true);
+          }
+          if (d.subject) {
+            setSubject(d.subject);
+          }
+          if (d.bodyHtml) {
+            bodyHtmlRef.current = d.bodyHtml;
+            if (editorRef.current) {
+              editorRef.current.innerHTML = d.bodyHtml;
+            }
+          }
+          if (d.scheduledAt) {
+            setScheduledAt(d.scheduledAt);
+          }
+          setDraftStatus('saved');
+        }
+      } catch {}
+    }
+  }, [initialDraft]);
 
-  // Auto-save draft with debounce (800ms)
+  // Real-time backend database auto-save with debounce (800ms)
   useEffect(() => {
     const hasAnyContent =
       recipients.length > 0 ||
+      toInputValue.trim().length > 0 ||
       subject.trim().length > 0 ||
       (editorRef.current && editorRef.current.innerHTML.trim() !== '' && editorRef.current.innerHTML !== '<br>') ||
       bodyHtmlRef.current.trim().length > 0;
@@ -236,27 +269,53 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
     if (!hasAnyContent) return;
 
     setDraftStatus('saving');
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       try {
-        const draft = {
-          recipients,
-          ccRecipients,
-          bccRecipients,
-          subject,
-          bodyHtml: editorRef.current?.innerHTML || bodyHtmlRef.current,
-          scheduledAt,
-          savedAt: new Date().toISOString(),
-        };
-        localStorage.setItem('reachinbox_draft_v1', JSON.stringify(draft));
+        const currentBody = editorRef.current?.innerHTML || bodyHtmlRef.current;
+        const allRecipients = [
+          ...recipients.map((r) => r.email),
+          ...(toInputValue.trim() ? [toInputValue.trim()] : []),
+        ].join(', ');
+
+        const res = await draftApi.save({
+          id: currentDraftIdRef.current || undefined,
+          recipientEmail: allRecipients,
+          subject: subject.trim(),
+          body: currentBody,
+          senderAccountId: senderId || null,
+          delaySeconds: delaySec,
+        });
+
+        if (res?.draft?.id) {
+          currentDraftIdRef.current = res.draft.id;
+        }
+
+        localStorage.setItem(
+          'reachinbox_draft_v1',
+          JSON.stringify({
+            recipients,
+            subject,
+            bodyHtml: currentBody,
+            savedAt: new Date().toISOString(),
+          })
+        );
+
         setDraftStatus('saved');
-      } catch {}
+        onDraftSaved?.();
+      } catch (err) {
+        console.warn('Draft auto-save notice:', err);
+      }
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [recipients, ccRecipients, bccRecipients, subject, scheduledAt]);
+  }, [recipients, toInputValue, subject, senderId, delaySec]);
 
-  const handleDiscardDraft = () => {
+  const handleDiscardDraft = async () => {
     try {
+      if (currentDraftIdRef.current) {
+        await draftApi.delete(currentDraftIdRef.current);
+        currentDraftIdRef.current = null;
+      }
       localStorage.removeItem('reachinbox_draft_v1');
     } catch {}
     setRecipients([]);
@@ -266,6 +325,7 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
     if (editorRef.current) editorRef.current.innerHTML = '';
     bodyHtmlRef.current = '';
     setDraftStatus('');
+    onDraftSaved?.();
     onBack();
   };
 
@@ -502,6 +562,10 @@ export const ComposeView: React.FC<ComposeViewProps> = ({
 
       try {
         localStorage.removeItem('reachinbox_draft_v1');
+        if (currentDraftIdRef.current) {
+          await draftApi.delete(currentDraftIdRef.current);
+          currentDraftIdRef.current = null;
+        }
       } catch {}
 
       onSuccess();

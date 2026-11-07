@@ -71,3 +71,16 @@ export interface SearchResult {
   sentAt?: string | null;
   previewUrl?: string | null;
 }
+
+export interface EmailDraft {
+  id: string;
+  userId: string;
+  recipientEmail: string;
+  subject: string;
+  body: string;
+  senderAccountId?: string | null;
+  delaySeconds: number;
+  createdAt: string;
+  updatedAt: string;
+}
+

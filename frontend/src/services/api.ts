@@ -1,5 +1,6 @@
 import axios from 'axios';
 import {
+  EmailDraft,
   EmailStats,
   ScheduledEmailJob,
   SenderAccount,
@@ -29,13 +30,32 @@ export const authApi = {
     return res.data;
   },
 
-  async demoLogin(email?: string, name?: string): Promise<{ token: string; user: User }> {
-    const res = await api.post('/api/auth/demo', { email, name });
+  async getMe(): Promise<{ user: User }> {
+    const res = await api.get('/api/auth/me');
+    return res.data;
+  },
+};
+
+export const draftApi = {
+  async list(): Promise<{ drafts: EmailDraft[]; total: number }> {
+    const res = await api.get('/api/drafts');
     return res.data;
   },
 
-  async getMe(): Promise<{ user: User }> {
-    const res = await api.get('/api/auth/me');
+  async save(data: {
+    id?: string;
+    recipientEmail?: string;
+    subject?: string;
+    body?: string;
+    senderAccountId?: string | null;
+    delaySeconds?: number;
+  }): Promise<{ draft: EmailDraft }> {
+    const res = await api.post('/api/drafts', data);
+    return res.data;
+  },
+
+  async delete(id: string): Promise<{ success: boolean }> {
+    const res = await api.delete(`/api/drafts/${id}`);
     return res.data;
   },
 };

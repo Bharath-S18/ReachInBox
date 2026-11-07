@@ -2,45 +2,124 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply m-0 p-0 bg-white text-gray-900 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  ::selection {
+    background-color: #c2e7ff;
+    color: #041e49;
+  }
 }
 
-::selection {
-  background-color: #c2e7ff !important;
-  color: #041e49 !important;
-}
+@layer utilities {
+  /* Minimalist ChatGPT-style custom scrollbar */
+  .scrollbar-chatgpt {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+  }
 
-::-moz-selection {
-  background-color: #c2e7ff !important;
-  color: #041e49 !important;
-}
+  .scrollbar-chatgpt::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #ffffff;
-  color: #111827;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+  .scrollbar-chatgpt::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-/* Custom subtle scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+  .scrollbar-chatgpt::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.35);
+    border-radius: 9999px;
+  }
 
-::-webkit-scrollbar-track {
-  background: #f9fafb;
-}
+  .scrollbar-chatgpt::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.6);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
-}
+  /* Subtle ambient animations for modern SaaS landing */
+  @keyframes float-slow {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 8s ease-in-out infinite;
+  }
+
+  /* Real-time telemetry equalizer audio bars */
+  @keyframes eq-bounce-1 {
+    0%, 100% { height: 4px; }
+    50% { height: 14px; }
+  }
+  @keyframes eq-bounce-2 {
+    0%, 100% { height: 12px; }
+    50% { height: 5px; }
+  }
+  @keyframes eq-bounce-3 {
+    0%, 100% { height: 6px; }
+    50% { height: 16px; }
+  }
+  @keyframes eq-bounce-4 {
+    0%, 100% { height: 14px; }
+    50% { height: 8px; }
+  }
+
+  .animate-eq-1 {
+    animation: eq-bounce-1 0.8s ease-in-out infinite;
+  }
+  .animate-eq-2 {
+    animation: eq-bounce-2 0.7s ease-in-out infinite 0.15s;
+  }
+  .animate-eq-3 {
+    animation: eq-bounce-3 0.9s ease-in-out infinite 0.3s;
+  }
+  .animate-eq-4 {
+    animation: eq-bounce-4 0.65s ease-in-out infinite 0.1s;
+  }
+
+  /* Radar pulse for Redis online */
+  @keyframes radar-ring {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+
+  .animate-radar {
+    animation: radar-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+  }
 }

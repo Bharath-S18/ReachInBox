@@ -11,6 +11,7 @@ import slackRouter from './routes/slack.routes.js';
 import emailRouter from './routes/email.routes.js';
 import authRouter from './routes/auth.routes.js';
 import senderRouter from './routes/sender.routes.js';
+import draftRouter from './routes/draft.routes.js';
 import { setupBullBoard } from './config/bullBoard.js';
 
 dotenv.config();
@@ -29,6 +30,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/senders', senderRouter);
 app.use('/api/slack', slackRouter);
 app.use('/api/emails', emailRouter);
+app.use('/api/drafts', draftRouter);
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
