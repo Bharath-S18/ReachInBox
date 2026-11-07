@@ -9,12 +9,14 @@ import { EmailDetailView } from './components/layout/EmailDetailView';
 import { ComposeView } from './components/layout/ComposeView';
 import { QueueTelemetryView } from './components/dashboard/QueueTelemetryView';
 import { SendersModal } from './components/SendersModal';
-import { authApi, emailApi, senderApi } from './services/api';
+import { SlackModal } from './components/SlackModal';
+import { authApi, emailApi, senderApi, slackApi } from './services/api';
 import {
   EmailStats,
   ScheduledEmailJob,
   SenderAccount,
   SentEmailJob,
+  SlackStatus,
   User,
 } from './types';
 
@@ -36,6 +38,8 @@ export function AppContent() {
 
   // Modals
   const [isSendersModalOpen, setIsSendersModalOpen] = useState(false);
+  const [isSlackModalOpen, setIsSlackModalOpen] = useState(false);
+  const [slackStatus, setSlackStatus] = useState<SlackStatus | null>(null);
 
   // Data states
   const [stats, setStats] = useState<EmailStats | null>(null);
@@ -102,7 +106,7 @@ export function AppContent() {
     setIsRefreshing(true);
 
     try {
-      const [statsRes, sendersRes, scheduledRes, sentRes] =
+      const [statsRes, sendersRes, scheduledRes, sentRes, slackRes] =
         await Promise.all([
           emailApi.getStats().catch(() => {
             setBackendOnline(false);
@@ -117,6 +121,7 @@ export function AppContent() {
             setBackendOnline(false);
             return { jobs: [], total: 0 };
           }),
+          slackApi.getStatus().catch(() => ({ connected: false })),
         ]);
 
       setBackendOnline(true);
@@ -124,6 +129,7 @@ export function AppContent() {
       setSenders(sendersRes.senders || []);
       setScheduledJobs(scheduledRes.jobs || []);
       setSentJobs(sentRes.jobs || []);
+      setSlackStatus(slackRes || { connected: false });
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
       setBackendOnline(false);
@@ -311,6 +317,8 @@ export function AppContent() {
           setSelectedEmail(null);
         }}
         onOpenSenders={() => setIsSendersModalOpen(true)}
+        onOpenSlack={() => setIsSlackModalOpen(true)}
+        slackStatus={slackStatus}
         onLogout={handleLogout}
         scheduledCount={scheduledCount}
         sentCount={sentCount}
@@ -449,6 +457,14 @@ export function AppContent() {
         onClose={() => setIsSendersModalOpen(false)}
         senders={senders}
         onSenderCreated={() => loadDashboardData(true)}
+      />
+
+      {/* Slack Live Alerting Integration Modal */}
+      <SlackModal
+        isOpen={isSlackModalOpen}
+        onClose={() => setIsSlackModalOpen(false)}
+        status={slackStatus}
+        onStatusUpdated={() => loadDashboardData(true)}
       />
     </div>
   );

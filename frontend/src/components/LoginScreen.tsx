@@ -78,26 +78,36 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex items-center justify-center p-4">
-      <div className="w-full max-w-[440px] rounded-2xl border border-gray-100 bg-white p-8 sm:p-10 shadow-[0_2px_16px_rgba(0,0,0,0.04)]">
-        {/* Title */}
-        <h1 className="text-2xl sm:text-[28px] font-bold text-gray-900 text-center tracking-tight mb-8">
-          {isSignUp ? 'Create an Account' : 'Login'}
-        </h1>
+    <div className="min-h-screen w-full bg-[#f8fafc] flex items-center justify-center p-4 select-none">
+      <div className="w-full max-w-[420px] rounded-2xl border border-gray-200/80 bg-white p-8 sm:p-10 shadow-xl shadow-slate-200/50">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-11 h-11 rounded-xl bg-[#0b57d0] text-white flex items-center justify-center font-bold text-xl shadow-sm mb-3">
+            R
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            {isSignUp ? 'Create an Account' : 'Welcome to ReachInbox'}
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            {isSignUp
+              ? 'Get started with distributed email campaigns'
+              : 'Sign in to monitor your queues & outreach'}
+          </p>
+        </div>
 
         {/* Error message */}
         {errorMsg && (
-          <div className="mb-5 rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-600 text-center">
+          <div className="mb-5 rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-600 text-center font-medium">
             {errorMsg}
           </div>
         )}
 
-        {/* Google OAuth Login Button */}
+        {/* Google OAuth Login Button - Modern Google Style */}
         <button
           type="button"
           onClick={() => googleLoginTrigger()}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#e6f4ea] hover:bg-[#d8edd9] text-gray-800 text-sm font-medium transition-colors mb-6 shadow-sm disabled:opacity-60 cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-all shadow-2xs hover:shadow-xs disabled:opacity-60 cursor-pointer"
         >
           {/* Authentic Google G Icon */}
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
@@ -118,20 +128,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
             />
           </svg>
-          <span>
+          <span className="font-semibold text-gray-700">
             {loading
               ? 'Connecting...'
               : isSignUp
               ? 'Sign up with Google'
-              : 'Login with Google'}
+              : 'Sign in with Google'}
           </span>
         </button>
 
         {/* Divider */}
-        <div className="relative flex items-center justify-center mb-6">
+        <div className="relative flex items-center justify-center my-6">
           <div className="w-full border-t border-gray-200" />
-          <span className="absolute bg-white px-3 text-xs text-gray-400">
-            {isSignUp ? 'or register with email' : 'or sign up through email'}
+          <span className="absolute bg-white px-3 text-xs text-gray-400 font-medium uppercase tracking-wider">
+            or continue with email
           </span>
         </div>
 
@@ -144,7 +154,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 placeholder="Full Name"
-                className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
+                className="w-full rounded-xl bg-white border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#0b57d0] focus:ring-2 focus:ring-[#0b57d0]/15 transition"
               />
             </div>
           )}
@@ -154,9 +164,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               type="email"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="Email ID"
+              placeholder="name@company.com"
               required
-              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
+              className="w-full rounded-xl bg-white border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#0b57d0] focus:ring-2 focus:ring-[#0b57d0]/15 transition"
             />
           </div>
 
@@ -165,17 +175,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              placeholder="Password"
-              className="w-full rounded-xl bg-[#f4f6f5] border-0 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
+              placeholder="••••••••"
+              className="w-full rounded-xl bg-white border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#0b57d0] focus:ring-2 focus:ring-[#0b57d0]/15 transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3.5 px-4 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white text-sm font-semibold transition-all shadow-sm active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+            className="w-full mt-2 py-3 px-4 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white text-sm font-semibold transition-all shadow-xs active:scale-[0.99] disabled:opacity-60 cursor-pointer"
           >
-            {loading ? 'Authenticating...' : isSignUp ? 'Create Account' : 'Login'}
+            {loading ? 'Authenticating...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
 

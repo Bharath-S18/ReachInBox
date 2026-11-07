@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Star, Archive, Trash2, ExternalLink, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Star, Trash2, ExternalLink, ChevronDown } from 'lucide-react';
 import { ScheduledEmailJob, SentEmailJob, User } from '../../types';
 
 interface EmailDetailViewProps {
@@ -88,16 +88,10 @@ export const EmailDetailView: React.FC<EmailDetailViewProps> = ({
               }`}
             />
           </button>
-          <button
-            className="p-2 rounded-full hover:bg-gray-100 transition text-gray-400 hover:text-gray-600"
-            title="Archive"
-          >
-            <Archive className="w-4 h-4" />
-          </button>
           {onDelete && (
             <button
               onClick={() => onDelete(email.id)}
-              className="p-2 rounded-full hover:bg-red-50 transition text-gray-400 hover:text-red-500"
+              className="p-2 rounded-full hover:bg-red-50 transition text-gray-500 hover:text-red-600"
               title="Delete email"
             >
               <Trash2 className="w-4 h-4" />

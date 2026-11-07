@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Clock, Send, ChevronDown, Plus, LogOut, Radio, Mail, Activity } from 'lucide-react';
-import { User } from '../../types';
+import {
+  Clock,
+  Send,
+  ChevronDown,
+  Pencil,
+  LogOut,
+  Mail,
+  Activity,
+  Hash,
+  CheckCircle2,
+} from 'lucide-react';
+import { SlackStatus, User } from '../../types';
 
 interface SidebarProps {
   user: User | null;
@@ -8,6 +18,8 @@ interface SidebarProps {
   onTabChange: (tab: 'scheduled' | 'sent' | 'telemetry') => void;
   onOpenCompose: () => void;
   onOpenSenders: () => void;
+  onOpenSlack?: () => void;
+  slackStatus?: SlackStatus | null;
   onLogout: () => void;
   scheduledCount: number;
   sentCount: number;
@@ -19,6 +31,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   onOpenCompose,
   onOpenSenders,
+  onOpenSlack,
+  slackStatus,
   onLogout,
   scheduledCount,
   sentCount,
@@ -37,45 +51,188 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const displayName = user?.name || 'Oliver Brown';
-  const displayEmail = user?.email || 'oliver.brown@domain.io';
-  const displayAvatar = user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80';
+  const displayName = user?.name || 'User';
+  const displayEmail = user?.email || 'user@example.com';
+  const displayAvatar =
+    user?.avatar ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayEmail}`;
 
   return (
-    <aside className="w-[260px] flex-shrink-0 bg-white border-r border-gray-100 min-h-screen flex flex-col p-4 select-none">
-      {/* Brand Logo - Matching ONB stylized branding from Screenshots */}
-      <div className="pt-2 pb-4 px-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Geometric bold ONB mark */}
-          <div className="flex items-center tracking-tighter font-black text-2xl text-black">
-            <span>ON</span>
-            <span className="text-[#0b57d0]">B</span>
+    <aside className="w-[260px] flex-shrink-0 bg-[#f6f8fc] border-r border-[#e0e5ed] min-h-screen flex flex-col p-3 select-none">
+      {/* Brand Header: Modern Gmail / Google Workspace Style */}
+      <div className="pt-2 pb-5 px-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-[#0b57d0] text-white flex items-center justify-center font-bold text-base shadow-xs tracking-tight">
+            R
           </div>
-          <span className="text-[10px] font-semibold tracking-wider uppercase text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-            ReachInbox
-          </span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-semibold tracking-tight text-gray-800">ReachInbox</span>
+            <span className="text-[11px] font-medium text-gray-400">Mail</span>
+          </div>
         </div>
       </div>
 
-      {/* User Card with dropdown */}
-      <div className="relative mb-5" ref={menuRef}>
+      {/* Gmail Material 3 Compose Floating Pill Button */}
+      <div className="px-1 mb-5">
+        <button
+          onClick={onOpenCompose}
+          className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-[#c2e7ff] text-[#001d35] hover:bg-[#b3dcfb] hover:shadow-md transition-all font-medium text-sm select-none active:scale-98 shadow-xs w-fit"
+          title="Compose new outreach"
+        >
+          <Pencil className="w-4 h-4 stroke-[2.2] text-[#001d35]" />
+          <span className="font-semibold text-sm">Compose</span>
+        </button>
+      </div>
+
+      {/* Navigation Sections */}
+      <div className="space-y-0.5">
+        {/* Scheduled tab */}
+        <button
+          onClick={() => onTabChange('scheduled')}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
+            activeTab === 'scheduled'
+              ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+              : 'text-gray-700 hover:bg-[#e9eef6] hover:text-gray-900'
+          }`}
+        >
+          <div className="flex items-center gap-3.5">
+            <Clock
+              className={`w-4 h-4 ${
+                activeTab === 'scheduled' ? 'text-[#041e49] stroke-[2.2]' : 'text-gray-500'
+              }`}
+            />
+            <span>Scheduled</span>
+          </div>
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+              activeTab === 'scheduled'
+                ? 'text-[#041e49]'
+                : 'text-gray-500 bg-gray-200/60'
+            }`}
+          >
+            {scheduledCount}
+          </span>
+        </button>
+
+        {/* Sent tab */}
+        <button
+          onClick={() => onTabChange('sent')}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
+            activeTab === 'sent'
+              ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+              : 'text-gray-700 hover:bg-[#e9eef6] hover:text-gray-900'
+          }`}
+        >
+          <div className="flex items-center gap-3.5">
+            <Send
+              className={`w-4 h-4 ${
+                activeTab === 'sent' ? 'text-[#041e49] stroke-[2.2]' : 'text-gray-500'
+              }`}
+            />
+            <span>Sent</span>
+          </div>
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+              activeTab === 'sent'
+                ? 'text-[#041e49]'
+                : 'text-gray-500 bg-gray-200/60'
+            }`}
+          >
+            {sentCount}
+          </span>
+        </button>
+
+        {/* BullMQ Telemetry tab */}
+        <button
+          onClick={() => onTabChange('telemetry')}
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${
+            activeTab === 'telemetry'
+              ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+              : 'text-gray-700 hover:bg-[#e9eef6] hover:text-gray-900'
+          }`}
+        >
+          <div className="flex items-center gap-3.5">
+            <Activity
+              className={`w-4 h-4 ${
+                activeTab === 'telemetry' ? 'text-[#041e49] stroke-[2.2]' : 'text-gray-500'
+              }`}
+            />
+            <span>Queue Telemetry</span>
+          </div>
+          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </span>
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="my-3 border-t border-[#e0e5ed] mx-2" />
+
+      {/* Integrations & Senders Management */}
+      <div className="space-y-1">
+        <div className="px-4 pb-1 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
+          Integrations
+        </div>
+
+        {/* Slack Live Alerting Integration Button */}
+        <button
+          onClick={onOpenSlack}
+          className="w-full flex items-center justify-between px-4 py-2 rounded-full text-xs font-medium text-gray-700 hover:bg-[#e9eef6] transition"
+          title="Configure Slack live alerts for rate limiting"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 rounded bg-[#4a154b] text-white flex items-center justify-center text-[10px] font-black">
+              #
+            </div>
+            <span className="font-medium text-gray-800">Slack Alerts</span>
+          </div>
+          {slackStatus?.connected ? (
+            <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              #{slackStatus.channelName || 'alerts'}
+            </span>
+          ) : (
+            <span className="text-[10px] bg-gray-200/70 text-gray-600 font-medium px-2 py-0.5 rounded-full hover:bg-gray-300">
+              Connect
+            </span>
+          )}
+        </button>
+
+        {/* SMTP Senders Manager Button */}
+        <button
+          onClick={onOpenSenders}
+          className="w-full flex items-center justify-between px-4 py-2 rounded-full text-xs font-medium text-gray-700 hover:bg-[#e9eef6] transition"
+          title="Manage Ethereal and outbound SMTP senders"
+        >
+          <div className="flex items-center gap-3">
+            <Mail className="w-4 h-4 text-[#0b57d0]" />
+            <span className="font-medium text-gray-800">SMTP Senders</span>
+          </div>
+          <span className="text-[10px] bg-blue-50 text-[#0b57d0] font-semibold border border-blue-200 px-2 py-0.5 rounded-full">
+            Manage
+          </span>
+        </button>
+      </div>
+
+      {/* User Card Profile & Dropdown at Bottom */}
+      <div className="mt-auto pt-3 border-t border-[#e0e5ed] relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition text-left group"
+          className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-[#e9eef6] transition text-left group"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <img
               src={displayAvatar}
               alt={displayName}
-              className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
+              className="w-8 h-8 rounded-full object-cover ring-1 ring-gray-300"
               onError={(e) => {
-                // Fallback avatar
                 (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayEmail}`;
               }}
             />
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-gray-900 truncate">{displayName}</div>
-              <div className="text-xs text-gray-400 truncate">{displayEmail}</div>
+              <div className="text-xs font-semibold text-gray-900 truncate">{displayName}</div>
+              <div className="text-[11px] text-gray-500 truncate">{displayEmail}</div>
             </div>
           </div>
           <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition flex-shrink-0 ml-1" />
@@ -83,17 +240,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User dropdown popover */}
         {menuOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-xl z-50 py-1.5 text-xs text-gray-700 animate-in fade-in zoom-in-95 duration-100">
-            <button
-              onClick={() => {
-                onTabChange('telemetry');
-                setMenuOpen(false);
-              }}
-              className="w-full px-3.5 py-2 flex items-center gap-2.5 hover:bg-gray-50 text-left font-medium"
-            >
-              <Activity className="w-3.5 h-3.5 text-blue-500" />
-              <span>BullMQ Queue Telemetry</span>
-            </button>
+          <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl border border-gray-200 shadow-xl z-50 py-1.5 text-xs text-gray-700 animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-3.5 py-2 border-b border-gray-100">
+              <div className="font-semibold text-gray-900 truncate">{displayName}</div>
+              <div className="text-[11px] text-gray-500 truncate">{displayEmail}</div>
+            </div>
             <button
               onClick={() => {
                 onOpenSenders();
@@ -103,6 +254,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <Mail className="w-3.5 h-3.5 text-[#0b57d0]" />
               <span>Outbound SMTP Senders</span>
+            </button>
+            <button
+              onClick={() => {
+                if (onOpenSlack) onOpenSlack();
+                setMenuOpen(false);
+              }}
+              className="w-full px-3.5 py-2 flex items-center gap-2.5 hover:bg-gray-50 text-left font-medium"
+            >
+              <Hash className="w-3.5 h-3.5 text-purple-600" />
+              <span>Slack Alerting</span>
             </button>
             <div className="my-1 border-t border-gray-100" />
             <button
@@ -117,110 +278,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         )}
-      </div>
-
-      {/* Primary Compose Action - Blue outline pill button */}
-      <div className="mb-6">
-        <button
-          onClick={onOpenCompose}
-          className="w-full py-2.5 px-4 rounded-full border border-[#0b57d0] text-[#0b57d0] hover:bg-[#0b57d0] hover:text-white font-medium text-sm flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Compose</span>
-        </button>
-      </div>
-
-      {/* CORE Navigation Section */}
-      <div className="space-y-1">
-        <div className="px-3 pb-2 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
-          CORE
-        </div>
-
-        {/* Scheduled tab */}
-        <button
-          onClick={() => onTabChange('scheduled')}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-            activeTab === 'scheduled'
-              ? 'bg-[#d3e3fd]/50 text-[#041e49] font-semibold'
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Clock
-              className={`w-4 h-4 ${
-                activeTab === 'scheduled' ? 'text-[#0b57d0]' : 'text-gray-400'
-              }`}
-            />
-            <span>Scheduled</span>
-          </div>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              activeTab === 'scheduled'
-                ? 'text-[#0b57d0] font-bold bg-[#d3e3fd]/60'
-                : 'text-gray-400'
-            }`}
-          >
-            {scheduledCount}
-          </span>
-        </button>
-
-        {/* Sent tab */}
-        <button
-          onClick={() => onTabChange('sent')}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-            activeTab === 'sent'
-              ? 'bg-[#d3e3fd]/50 text-[#041e49] font-semibold'
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <Send
-              className={`w-4 h-4 ${
-                activeTab === 'sent' ? 'text-[#0b57d0]' : 'text-gray-400'
-              }`}
-            />
-            <span>Sent</span>
-          </div>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              activeTab === 'sent'
-                ? 'text-[#0b57d0] font-bold bg-[#d3e3fd]/60'
-                : 'text-gray-400'
-            }`}
-          >
-            {sentCount}
-          </span>
-        </button>
-      </div>
-
-      {/* Telemetry & Integrations Bottom Section */}
-      <div className="mt-auto pt-6 border-t border-gray-100 space-y-1">
-        <button
-          onClick={() => onTabChange('telemetry')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-            activeTab === 'telemetry'
-              ? 'bg-blue-50 text-[#0b57d0] font-semibold'
-              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Radio className="w-3.5 h-3.5 text-[#0b57d0] animate-pulse" />
-            <span>BullMQ Telemetry</span>
-          </div>
-          <span className="text-[10px] bg-blue-100 text-[#0b57d0] px-1.5 py-0.5 rounded font-semibold">Live</span>
-        </button>
-
-        <button
-          onClick={onOpenSenders}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition"
-        >
-          <div className="flex items-center gap-2.5">
-            <Mail className="w-3.5 h-3.5 text-[#0b57d0]" />
-            <span>SMTP Senders</span>
-          </div>
-          <span className="text-[10px] bg-blue-50 text-[#0b57d0] px-1.5 py-0.5 rounded font-medium">Manage</span>
-        </button>
-
       </div>
     </aside>
   );

@@ -4,11 +4,7 @@ import {
   Star,
   ExternalLink,
   Trash2,
-  Archive,
-  Mail,
-  AlertOctagon,
-  FolderInput,
-  MoreVertical,
+  RotateCw,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -17,6 +13,7 @@ import {
   CheckSquare,
   Square,
   MinusSquare,
+  Eye,
 } from 'lucide-react';
 import { ScheduledEmailJob, SentEmailJob } from '../../types';
 
@@ -47,6 +44,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
   onSelectEmail,
   onCancelScheduled,
   onDeleteSelected,
+  onRefresh,
   isLoading,
   highlightQuery = '',
   currentPage = 1,
@@ -277,46 +275,27 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
             )}
           </div>
 
-          {/* Action icons when items are selected */}
+          {/* Working Refresh Button */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="p-1.5 rounded-full hover:bg-gray-100 transition text-gray-500 hover:text-gray-900 ml-1"
+              title="Refresh messages"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Real, Functional Action Icons when items are selected */}
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-1 ml-2 animate-in fade-in duration-100">
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
-                title="Archive"
-              >
-                <Archive className="w-4 h-4" />
-              </button>
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
-                title="Report spam"
-              >
-                <AlertOctagon className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-2 ml-2 animate-in fade-in duration-100">
               <button
                 onClick={handleDeleteSelected}
-                className="p-1.5 rounded hover:bg-blue-50 transition text-gray-600 hover:text-[#0b57d0]"
-                title="Delete"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition text-xs font-semibold shadow-2xs border border-red-200"
+                title={`Delete ${selectedIds.size} selected email(s)`}
               >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <div className="w-px h-4 bg-gray-200 mx-1" />
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
-                title="Mark as unread"
-              >
-                <Mail className="w-4 h-4" />
-              </button>
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
-                title="Move to"
-              >
-                <FolderInput className="w-4 h-4" />
-              </button>
-              <button
-                className="p-1.5 rounded hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
-                title="More"
-              >
-                <MoreVertical className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete ({selectedIds.size})</span>
               </button>
             </div>
           )}
@@ -540,42 +519,24 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                   {timeLabel}
                 </span>
 
-                {/* Hover Quick Action Icons (Archive, Delete, Mark as unread, Snooze - Screenshot 2 & 4) */}
+                {/* Hover Quick Action Icons - Only real, working actions */}
                 <div className="hidden group-hover:flex items-center gap-1 text-gray-500 animate-in fade-in duration-75">
                   <button
                     type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    title="Archive"
-                    className="p-1.5 rounded hover:bg-gray-200/80 text-gray-600 hover:text-gray-900 transition"
+                    onClick={() => onSelectEmail(job, type)}
+                    title="View email details"
+                    className="p-1.5 rounded-full hover:bg-gray-200/80 text-gray-600 hover:text-gray-900 transition"
                   >
-                    <Archive className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5" />
                   </button>
 
                   <button
                     type="button"
                     onClick={(e) => handleDeleteSingle(e, job.id)}
-                    title={type === 'scheduled' ? 'Cancel Scheduled Send' : 'Delete'}
-                    className="p-1.5 rounded hover:bg-blue-50 text-gray-600 hover:text-[#0b57d0] transition"
+                    title={type === 'scheduled' ? 'Cancel Scheduled Email' : 'Delete Email'}
+                    className="p-1.5 rounded-full hover:bg-red-50 text-gray-500 hover:text-red-600 transition"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    title="Mark as unread"
-                    className="p-1.5 rounded hover:bg-gray-200/80 text-gray-600 hover:text-gray-900 transition"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={(e) => e.stopPropagation()}
-                    title="Snooze"
-                    className="p-1.5 rounded hover:bg-gray-200/80 text-gray-600 hover:text-gray-900 transition"
-                  >
-                    <Clock className="w-3.5 h-3.5" />
                   </button>
 
                   {/* Ethereal preview link if available */}
@@ -585,8 +546,8 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      title="Open Ethereal Preview"
-                      className="p-1.5 rounded hover:bg-blue-50 text-gray-600 hover:text-[#0b57d0] transition"
+                      title="Open Live Ethereal Message"
+                      className="p-1.5 rounded-full hover:bg-blue-50 text-gray-600 hover:text-[#0b57d0] transition"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>

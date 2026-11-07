@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Filter, RotateCw, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, RotateCw, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
 import { SearchResult } from '../../types';
 
 interface TopSearchBarProps {
@@ -201,15 +201,8 @@ export const TopSearchBar: React.FC<TopSearchBarProps> = ({
         </span>
       )}
 
-      {/* Action Buttons: Filter & Refresh */}
+      {/* Live Data Refresh Trigger */}
       <div className="flex items-center gap-1.5 text-gray-500 shrink-0">
-        <button
-          title="Filter"
-          className="p-2 rounded-full hover:bg-gray-100 transition text-gray-500 hover:text-gray-700 active:scale-95"
-        >
-          <Filter className="w-4 h-4" />
-        </button>
-
         <button
           onClick={onRefresh}
           title="Refresh Data"
